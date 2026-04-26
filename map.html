@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>国家地図管理システム</title>
+    <style>
+        :root { --primary: #2c3e50; --accent: #27ae60; --admin: #e74c3c; }
+        body { font-family: 'Helvetica Neue', Arial, sans-serif; margin: 0; background: #f0f2f5; color: #333; }
+        
+        /* ヘッダー */
+        .header { background: var(--primary); color: white; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .header h1 { margin: 0; font-size: 1.5rem; }
+        
+        button { cursor: pointer; border: none; border-radius: 5px; font-weight: bold; padding: 10px 20px; transition: 0.2s; }
+        #auth-btn { background: white; color: var(--primary); }
+        #auth-btn:hover { background: #ecf0f1; }
+        #back-btn { background: #34495e; color: white; margin-right: 15px; display: none; }
+        #back-btn:hover { background: #2c3e50; }
+
+        /* マップ表示エリア */
+        .map-wrapper { text-align: center; padding: 20px; }
+        #map-viewport { 
+            position: relative; width: 100%; max-width: 1000px; margin: 0 auto; 
+            background: white; border: 5px solid white; border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1); overflow: hidden; display: inline-block;
+        }
+        #map-image { width: 100%; display: block; user-select: none; }
+
+        /* 配置されるボタン */
+        .map-marker {
+            position: absolute; transform: translate(-50%, -50%);
+            padding: 10px 20px; background: rgba(39, 174, 96, 0.9); color: white;
+            border-radius: 30px; font-size: 0.9rem; box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        }
+        .map-marker:hover { transform: translate(-50%, -50%) scale(1.1); background: var(--accent); }
+
+        /* 風景表示エリア */
+        #landscape-view { display: none; padding: 50px; font-size: 1.2rem; color: #555; background: white; border-radius: 10px; min-height: 400px; }
+
+        /* 管理者モード用 */
+        .editing .map-marker { border: 3px solid #f1c40f; cursor: move; }
+        .edit-overlay { 
+            display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
+            background: rgba(231, 76, 60, 0.05); cursor: crosshair; z-index: 5;
+        }
+        .admin-panel { 
+            position: fixed; bottom: 30px; right: 30px; background: white; border-top: 5px solid var(--admin);
+            padding: 20px; border-radius: 10px; box-shadow: 0 10px 40px rgba(0,0,0,0.2); z-index: 100; display: none;
+        }
+        .save-btn { background: var(--admin); color: white; width: 100%; padding: 12px; font-size: 1rem; }
+        .save-btn:hover { background: #c0392b; }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <div style="display: flex; align-items: center;">
+        <button id="back-btn" onclick="goBack()">◀ 戻る</button>
+        <h1 id="map-title">国家全図</h1>
+    </div>
+    <button id="auth-btn" onclick="toggleAdmin()">管理者ログイン</button>
+</div>
+
+<div class="map-wrapper">
+    <div id="map-viewport">
+        <div id="edit-overlay" class="edit-overlay" onclick="addMarker(event)"></div>
+        <img id="map-image" src="https://via.placeholder.com/1000x600?text=National+Map" alt="Map">
+        <div id="marker-container"></div>
+    </div>
+    
+    <div id="landscape-view">
+        <h2 id="landscape-title">風景</h2>
+        <p>（ここに美しい風景の写真や説明文が入ります）</p>
+    </div>
+</div>
+
+<div id="admin-controls" class="admin-panel">
+    <h3 style="margin-top:0; color: #e74c3c;">⚙️ 管理者モード起動中</h3>
+    <p style="font-size: 0.9rem; color: #666;">地図上をクリックして新しいボタンを配置できます。<br>既存のボタンをクリックすると削除できます。</p>
+    <button class="save-btn" onclick="saveToGitHub()">変更をGitHubに保存して反映</button>
+</div>
+
+<script>
+    // ==========================================
+    // 必須設定：ご自身のGitHub情報に書き換えてください
+    // ==========================================
+    const REPO_OWNER = 'Charlotte5227'; // 例: 'Octocat'
+    const REPO_NAME = 'map-Elnora';  // 例: 'my-map-site'
+    const FILE_PATH = 'data.json';             // データを保存するファイル名
+
+    // 内部状態の管理
+    let isAdmin = false;
+    let githubToken = "";
+    let historyStack = []; // 「戻る」ボタンのための履歴
+
+    // 初期データ（実際の運用では fetch で data.json から読み込む形を推奨）
+    let mapData = {
+        currentId: "national_01",
+        maps: {
+            "national_01": {
+                title: "国家全図",
+                image: "kokka-map.png",
+                markers: []
+            }
+        }
+    };
+
+    // --- 描画処理 ---
+    function renderMap(mapId, isBackAction = false) {
+        if(!mapData.maps[mapId] && mapId !== 'landscape') {
+            // マップが存在しない場合は仮のマップを生成（管理者用）
+            mapData.maps[mapId] = {
+                title: mapId + " (未設定)",
+                image: "https://via.placeholder.com/1000x600/bdc3c7/ffffff?text=" + mapId,
+                markers: []
+            };
+        }
+
+        const viewport = document.getElementById('map-viewport');
+        const landscape = document.getElementById('landscape-view');
+        const backBtn = document.getElementById('back-btn');
+
+        // 履歴の管理
+        if (!isBackAction && mapData.currentId !== mapId) {
+            historyStack.push(mapData.currentId);
+        }
+        mapData.currentId = mapId;
+        backBtn.style.display = historyStack.length > 0 ? 'inline-block' : 'none';
+
+        // 風景モードの処理
+        if (mapId === 'landscape') {
+            viewport.style.display = 'none';
+            landscape.style.display = 'block';
+            document.getElementById('map-title').innerText = "現地の風景";
+            return;
+        }
+
+        // 通常のマップ表示処理
+        viewport.style.display = 'inline-block';
+        landscape.style.display = 'none';
+        
+        const data = mapData.maps[mapId];
+        document.getElementById('map-title').innerText = data.title;
+        document.getElementById('map-image').src = data.image;
+        
+        const container = document.getElementById('marker-container');
+        container.innerHTML = '';
+
+        data.markers.forEach((m, index) => {
+            const btn = document.createElement('button');
+            btn.className = 'map-marker';
+            btn.innerText = m.label;
+            btn.style.left = m.x + "%";
+            btn.style.top = m.y + "%";
+            btn.onclick = (e) => {
+                e.stopPropagation(); // 下敷きのクリックイベントを発火させない
+                if(isAdmin) {
+                    if(confirm(`「${m.label}」のボタンを削除しますか？`)) {
+                        data.markers.splice(index, 1);
+                        renderMap(mapId);
+                    }
+                } else {
+                    renderMap(m.targetId);
+                }
+            };
+            container.appendChild(btn);
+        });
+    }
+
+    function goBack() {
+        if (historyStack.length > 0) {
+            const prevMapId = historyStack.pop();
+            renderMap(prevMapId, true);
+        }
+    }
+
+    // --- 管理者認証とボタン追加 ---
+    function toggleAdmin() {
+        if(!isAdmin) {
+            const pass = prompt("管理者パスワードを入力してください:");
+            if(pass === "426463") {
+                const token = prompt("認証成功。更新用のGitHub Personal Access Tokenを入力してください:");
+                if(token) {
+                    githubToken = token;
+                    isAdmin = true;
+                    document.getElementById('admin-controls').style.display = 'block';
+                    document.getElementById('edit-overlay').style.display = 'block';
+                    document.getElementById('auth-btn').innerText = "🔒 ログアウト";
+                    document.body.classList.add('editing');
+                } else {
+                    alert("トークンがキャンセルされたため管理者モードを中止します。");
+                }
+            } else if (pass !== null) {
+                alert("パスワードが違います。");
+            }
+        } else {
+            if(confirm("ログアウトしますか？保存していない変更は破棄されます。")) {
+                isAdmin = false;
+                githubToken = ""; 
+                location.reload(); 
+            }
+        }
+    }
+
+    function addMarker(event) {
+        if(!isAdmin) return;
+        
+        const rect = event.target.getBoundingClientRect();
+        const x = ((event.clientX - rect.left) / rect.width) * 100;
+        const y = ((event.clientY - rect.top) / rect.height) * 100;
+        
+        const label = prompt("ボタンに表示する文字（例: 東部地域, 〇〇市）:");
+        if(!label) return;
+        
+        const targetId = prompt("移動先のIDを決めてください。\n※風景を表示したい場合は「landscape」と入力", "region_" + Date.now().toString().slice(-4));
+        if(!targetId) return;
+
+        mapData.maps[mapData.currentId].markers.push({
+            x: x.toFixed(2),
+            y: y.toFixed(2),
+            label: label,
+            targetId: targetId
+        });
+        renderMap(mapData.currentId);
+    }
+
+    // --- GitHub API 保存処理 ---
+    function utoa(str) { return btoa(unescape(encodeURIComponent(str))); }
+
+    async function saveToGitHub() {
+        if (!githubToken) { alert("トークンがありません。"); return; }
+        
+        const btn = document.querySelector('.save-btn');
+        btn.innerText = "保存中...";
+        btn.disabled = true;
+
+        const url = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${FILE_PATH}`;
+        // 保存時に余分な「currentId」などの状態を省いて保存する
+        const dataToSave = { maps: mapData.maps };
+        const encodedContent = utoa(JSON.stringify(dataToSave, null, 2));
+
+        try {
+            let fileSha = "";
+            const getRes = await fetch(url, { headers: { 'Authorization': `token ${githubToken}` } });
+            if (getRes.ok) {
+                const fileData = await getRes.json();
+                fileSha = fileData.sha;
+            } else if (getRes.status !== 404) {
+                throw new Error("APIアクセスエラー。リポジトリ名やトークン権限を確認してください。");
+            }
+
+            const putRes = await fetch(url, {
+                method: 'PUT',
+                headers: { 'Authorization': `token ${githubToken}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    message: `マップデータを更新: ${new Date().toLocaleString()}`,
+                    content: encodedContent,
+                    sha: fileSha ? fileSha : undefined
+                })
+            });
+
+            if (putRes.ok) {
+                alert("✅ GitHubへの保存が完了しました！\n数分で実際のサイトに反映されます。");
+            } else {
+                const errorData = await putRes.json();
+                throw new Error(errorData.message);
+            }
+        } catch (error) {
+            console.error(error);
+            alert("保存に失敗しました: " + error.message);
+        } finally {
+            btn.innerText = "変更をGitHubに保存して反映";
+            btn.disabled = false;
+        }
+    }
+
+    // アプリ起動
+    renderMap("national_01");
+</script>
+</body>
+</html>
