@@ -43,6 +43,12 @@
             color: white; border-radius: 8px; font-weight: bold; box-shadow: 0 4px 10px rgba(0,0,0,0.3);
             display: flex; align-items: center; justify-content: center; text-shadow: 1px 1px 3px rgba(0,0,0,0.8);
             transition: transform 0.1s; user-select: none; overflow: hidden; box-sizing: border-box;
+            
+            /* 【変更箇所】文字サイズに合わせて自動で枠が伸び縮みする設定 */
+            padding: 0.5em 1em; /* 上下に0.5文字分、左右に1文字分の余白 */
+            white-space: nowrap; /* 文字が折り返さないようにする */
+            min-width: 3em;      /* 最低限の幅 */
+            min-height: 2em;     /* 最低限の高さ */
         }
         .map-marker:hover { transform: translate(-50%, -50%) scale(1.05); }
         
@@ -74,7 +80,7 @@
             <input type="text" id="prop-label">
             
             <label>文字サイズ変更 (<span id="size-val">16</span>px)</label>
-            <input type="range" id="prop-size" min="10" max="50" value="16" oninput="document.getElementById('size-val').innerText=this.value;">
+            <input type="range" id="prop-size" min="10" max="60" value="16" oninput="document.getElementById('size-val').innerText=this.value;">
             
             <label>移動先ID</label>
             <input type="text" id="prop-target">
@@ -84,7 +90,6 @@
             <div id="bg-preview">画像なし</div>
             
             <button class="btn-full btn-apply" onclick="applyMarkerEdits()">編集内容を反映</button>
-
             <button class="btn-full" style="color: #e74c3c; border-color: #e74c3c; margin-top: 10px;" onclick="deleteSelectedMarker()">このボタンを削除</button>
         </div>
 
@@ -116,11 +121,10 @@
     let historyStack = [];
     let currentMode = 'map'; 
     
-    // ドラッグ＆選択管理
     let selectedMarkerIndex = null;
     let isDragging = false;
-    let draggedElement = null; // ドラッグ中のDOM要素を保持
-    let tempBgImage = null;    // 適用前の画像を一時保持
+    let draggedElement = null; 
+    let tempBgImage = null;    
 
     let mapData = {
         currentId: "national_01",
@@ -143,7 +147,6 @@
         document.getElementById('grid-view').style.display = 'none';
         document.getElementById('view-toggle-btn').innerText = "各都市画面移動ボタン";
         
-        // 再描画時は選択を解除（移動先などでバグを防ぐため）
         deselectMarker();
 
         const data = mapData.maps[mapId];
@@ -160,8 +163,8 @@
             btn.innerText = m.label || "無名";
             btn.style.left = m.x + "%";
             btn.style.top = m.y + "%";
-            btn.style.width = (m.width || 120) + "px";
-            btn.style.height = (m.height || 60) + "px";
+            
+            // 【変更箇所】固定のwidth/heightの割り当てを削除。フォントサイズのみ指定。
             btn.style.fontSize = (m.fontSize || 16) + "px";
             
             if (m.bgImage) {
@@ -169,19 +172,17 @@
                 btn.style.backgroundColor = "transparent";
             }
 
-            // 【修正箇所】クリック時の判定分離とドラッグ要素の取得
             btn.onmousedown = (e) => {
                 if(!isAdmin) return;
                 e.stopPropagation();
-                e.preventDefault(); // テキスト選択などを防ぐ
+                e.preventDefault(); 
                 selectMarker(index);
                 isDragging = true;
-                draggedElement = btn; // 移動させる要素を直接つかむ
+                draggedElement = btn; 
             };
 
             btn.onclick = (e) => {
                 e.stopPropagation();
-                // 一般ユーザーのみ、クリックで移動する
                 if(!isAdmin) {
                     renderMap(m.targetId);
                 }
@@ -214,7 +215,7 @@
 
     function addNewMarker() {
         mapData.maps[mapData.currentId].markers.push({
-            x: 50, y: 50, width: 120, height: 60, fontSize: 16,
+            x: 50, y: 50, fontSize: 16,
             label: "新規ボタン", targetId: "map_" + Date.now().toString().slice(-4), bgImage: ""
         });
         renderMap(mapData.currentId, true);
@@ -222,7 +223,7 @@
 
     function selectMarker(index) {
         selectedMarkerIndex = index;
-        tempBgImage = null; // 選択を切り替えたら一時画像をリセット
+        tempBgImage = null; 
         const m = mapData.maps[mapData.currentId].markers[index];
         const panel = document.getElementById('edit-panel');
         panel.style.opacity = 1; panel.style.pointerEvents = 'auto';
@@ -236,7 +237,6 @@
         if (m.bgImage) { preview.style.backgroundImage = `url(${m.bgImage})`; preview.innerText = ""; }
         else { preview.style.backgroundImage = "none"; preview.innerText = "画像なし"; }
 
-        // 見た目の選択枠を更新
         const allMarkers = document.querySelectorAll('.map-marker');
         allMarkers.forEach((el, i) => {
             if (i === index) el.classList.add('selected');
@@ -253,24 +253,22 @@
         document.querySelectorAll('.map-marker').forEach(el => el.classList.remove('selected'));
     }
 
-    // 【新規】編集内容を反映する機能
     function applyMarkerEdits() {
         if (selectedMarkerIndex === null) return;
         const m = mapData.maps[mapData.currentId].markers[selectedMarkerIndex];
         
-        // 入力欄の値を取得してデータに書き込み
         m.label = document.getElementById('prop-label').value;
         m.fontSize = parseInt(document.getElementById('prop-size').value);
         m.targetId = document.getElementById('prop-target').value;
         
-        // 画像が新しくアップロードされていれば適用
         if (tempBgImage !== null) {
             m.bgImage = tempBgImage;
             tempBgImage = null;
         }
         
-        alert("編集内容を反映しました。\n※完全に保存するには右下の「変更をGitHubに保存」を押してください。");
         renderMap(mapData.currentId, true);
+        // 更新後に再度選択枠をつける
+        selectMarker(selectedMarkerIndex);
     }
 
     function deleteSelectedMarker() {
@@ -285,7 +283,6 @@
         if (selectedMarkerIndex === null || !event.target.files[0]) return;
         const reader = new FileReader();
         reader.onload = (e) => { 
-            // プレビューにだけ表示し、反映ボタンを押すまで待機する
             tempBgImage = e.target.result;
             const preview = document.getElementById('bg-preview');
             preview.style.backgroundImage = `url(${tempBgImage})`; 
@@ -294,28 +291,24 @@
         reader.readAsDataURL(event.target.files[0]);
     }
 
-    // 【修正箇所】ドラッグ移動（再描画せずDOMを直接動かす）
     window.onmousemove = (e) => {
         if(!isDragging || selectedMarkerIndex === null || !draggedElement) return;
         const viewport = document.getElementById('map-viewport');
         const rect = viewport.getBoundingClientRect();
         
-        // 範囲外に出ないよう制限
         let x = Math.max(0, Math.min(100, ((e.clientX - rect.left) / rect.width) * 100));
         let y = Math.max(0, Math.min(100, ((e.clientY - rect.top) / rect.height) * 100));
         
-        // 画面の見た目だけを動かす（非常に滑らかになる）
         draggedElement.style.left = x.toFixed(2) + "%";
         draggedElement.style.top = y.toFixed(2) + "%";
 
-        // 裏のデータも更新
         mapData.maps[mapData.currentId].markers[selectedMarkerIndex].x = x.toFixed(2);
         mapData.maps[mapData.currentId].markers[selectedMarkerIndex].y = y.toFixed(2);
     };
     
     window.onmouseup = () => { 
         isDragging = false; 
-        draggedElement = null; // つかんでいた要素を離す
+        draggedElement = null; 
     };
     
     function goBack() { if (historyStack.length > 0) renderMap(historyStack.pop(), true); }
