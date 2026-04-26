@@ -1,0 +1,23 @@
+{
+  "maps": {
+    "national_01": {
+      "title": "国家全図",
+      "image": "kokka-map.png",
+      "markers": [
+        {
+          "x": "23.17",
+          "y": "35.34",
+          "fontSize": 10,
+          "label": "エルノーラ第五区画",
+          "targetId": "map_1",
+          "bgImage": ""
+        }
+      ]
+    },
+    "map_1": {
+      "title": "エルノーラ第五区画",
+      "image": "kokka-map.png",
+      "markers": []
+    }
+  }
+}
