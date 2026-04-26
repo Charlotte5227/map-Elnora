@@ -388,22 +388,62 @@
 
     async function saveToGitHub() {
         if(!githubToken) return;
+        
+        // コピー時の余分な空白が入ってエラーになるのを防ぐ
+        const cleanToken = githubToken.trim(); 
+        
         const btn = document.querySelector('.btn-save');
         btn.innerText = "通信中...";
         const url = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${FILE_PATH}`;
+        
+        // GitHub APIの最新公式フォーマットに厳密に合わせたヘッダー
+        const headers = { 
+            'Authorization': `Bearer ${cleanToken}`,
+            'Accept': 'application/vnd.github+json',
+            'X-GitHub-Api-Version': '2022-11-28'
+        };
+
         try {
-            const getRes = await fetch(url, { headers: { 'Authorization': `token ${githubToken}`, 'Cache-Control': 'no-cache' } });
-            const fileSha = getRes.ok ? (await getRes.json()).sha : undefined;
+            // 1. ファイルの最新状態（SHA）を取得
+            // ※ここでCache-Controlヘッダーを手動追加するとCORSエラー（Failed to fetch）になるため、オプションで指定
+            const getRes = await fetch(url, { 
+                headers: headers, 
+                cache: 'no-store' 
+            });
+            
+            let fileSha = undefined;
+            if (getRes.ok) {
+                const data = await getRes.json();
+                fileSha = data.sha;
+            }
+
+            // 2. データをBase64に変換して送信
             const jsonString = JSON.stringify({ maps: mapData.maps }, null, 2);
             const encodedContent = btoa(unescape(encodeURIComponent(jsonString)));
+            
             const putRes = await fetch(url, {
                 method: 'PUT',
-                headers: { 'Authorization': `token ${githubToken}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify({ message: "Update map data", content: encodedContent, sha: fileSha })
+                headers: { 
+                    ...headers, 
+                    'Content-Type': 'application/json' 
+                },
+                body: JSON.stringify({ 
+                    message: "マップデータを更新", 
+                    content: encodedContent, 
+                    sha: fileSha 
+                })
             });
-            if (putRes.ok) alert("GitHubへの保存完了！");
-            else alert("保存失敗。トークン権限等を確認してください。");
-        } catch (e) { alert("エラー: " + e.message); }
+
+            if (putRes.ok) {
+                alert("GitHubへの保存完了！\n反映まで1〜3分お待ちください。");
+            } else {
+                const errorData = await putRes.json();
+                alert(`保存失敗 (GitHubからの返答):\n${errorData.message}`);
+            }
+        } catch (e) { 
+            alert(`通信エラー (Failed to fetch):\nブラウザが通信を遮断しました。\n\n詳細: ${e.message}`); 
+            console.error(e);
+        }
         btn.innerText = "変更をGitHubに保存";
     }
 
