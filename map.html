@@ -27,7 +27,7 @@
         
         .info-text { font-size: 0.75rem; color: #666; margin-bottom: 5px; }
         
-        #bg-preview { width: 100%; height: 80px; border: 1px dashed #aaa; margin-top: 5px; background-size: cover; background-position: center; display: flex; align-items: center; justify-content: center; color: #aaa; font-size: 0.8rem; }
+        #target-bg-preview { width: 100%; height: 80px; border: 1px dashed #aaa; margin-top: 5px; background-size: cover; background-position: center; display: flex; align-items: center; justify-content: center; color: #aaa; font-size: 0.8rem; background-color: #eee; }
         .btn-full { width: 100%; padding: 10px; margin-top: 10px; border: 1px solid #333; background: white; }
         .btn-full:hover { background: #eee; }
         .btn-apply { background: #3498db; color: white; border: none; }
@@ -45,7 +45,7 @@
         /* マップ上のボタン */
         .map-marker {
             position: absolute; transform: translate(-50%, -50%);
-            background-color: rgba(39, 174, 96, 0.9); background-size: cover; background-position: center;
+            background-color: rgba(39, 174, 96, 0.9);
             color: white; border-radius: 8px; font-weight: bold; box-shadow: 0 4px 10px rgba(0,0,0,0.3);
             display: flex; align-items: center; justify-content: center; text-shadow: 1px 1px 3px rgba(0,0,0,0.8);
             transition: transform 0.1s; user-select: none; overflow: hidden; box-sizing: border-box;
@@ -53,7 +53,7 @@
             border: 2px solid transparent; z-index: 10;
         }
         
-        .map-marker.no-bg { background-color: transparent !important; background-image: none !important; box-shadow: none !important; text-shadow: none !important; }
+        .map-marker.no-bg { background-color: transparent !important; box-shadow: none !important; text-shadow: 1px 1px 2px rgba(0,0,0,0.8) !important; }
         .map-marker.has-border { border: 2px solid white; }
         .map-marker:hover { transform: translate(-50%, -50%) scale(1.05); z-index: 20; }
         .editing .map-marker { cursor: move; }
@@ -75,19 +75,18 @@
 <div class="app-container">
     <div class="sidebar" id="sidebar">
         
-        <div class="sidebar-section" style="background: #e8f4f8; border-color: #3498db;">
-            <div class="sidebar-title">🗺️ 現在のマップ設定</div>
-            <label>区画の名前</label>
-            <input type="text" id="map-prop-title">
-            <label>マップ背景画像</label>
-            <input type="file" id="map-prop-bg" accept="image/png, image/jpeg" onchange="handleMapBgUpload(event)">
-            <button class="btn-full btn-apply" onclick="applyMapSettings()" style="margin-top: 10px;">マップ設定を反映</button>
+        <div class="sidebar-section" style="background: #e8f4f8; border-color: #3498db; padding: 10px 15px;">
+            <label style="margin-top: 0;">現在のマップ名</label>
+            <div style="display: flex; gap: 5px;">
+                <input type="text" id="map-prop-title" style="margin-bottom: 0;">
+                <button onclick="applyCurrentMapTitle()" style="background: #3498db; color: white;">更新</button>
+            </div>
         </div>
 
         <button class="btn-full" style="border-color: #27ae60; color: #27ae60; font-weight: bold;" onclick="addNewMarker()">＋ 新しいボタンを配置</button>
         
         <div class="sidebar-section" id="edit-panel" style="opacity: 0.5; pointer-events: none; margin-top: 15px;">
-            <div class="sidebar-title">🔘 選択中のボタン編集</div>
+            <div class="sidebar-title">🔘 ボタンの見た目設定</div>
             <label>ボタン名</label>
             <input type="text" id="prop-label">
             
@@ -105,22 +104,25 @@
 
             <div class="checkbox-group" style="margin-top: 10px;">
                 <input type="checkbox" id="prop-bg-toggle">
-                <label for="prop-bg-toggle" style="margin:0;">背景を表示</label>
+                <label for="prop-bg-toggle" style="margin:0;">ボタン背景色</label>
                 <input type="checkbox" id="prop-border-toggle" style="margin-left: 10px;">
-                <label for="prop-border-toggle" style="margin:0;">枠線を表示</label>
+                <label for="prop-border-toggle" style="margin:0;">枠線</label>
             </div>
             
-            <label style="margin-top: 15px;">移動先ID</label>
-            <div style="display: flex; gap: 5px; margin-bottom: 5px;">
+            <hr style="border: 0; border-top: 1px solid #ccc; margin: 20px 0;">
+
+            <div class="sidebar-title">🚪 移動先（次階層）の設定</div>
+            <label>移動先ID</label>
+            <div style="display: flex; gap: 5px; margin-bottom: 10px;">
                 <input type="text" id="prop-target" style="margin-bottom: 0;">
                 <button onclick="jumpToTarget()" style="background: #34495e; color: white; padding: 5px 10px;">🚀 ジャンプ</button>
             </div>
 
-            <label>ボタン画像（背景ON時）</label>
-            <input type="file" id="prop-bg" accept="image/png, image/jpeg" onchange="handleImageUpload(event)">
-            <div id="bg-preview">画像なし</div>
+            <label>移動先のマップ画像</label>
+            <input type="file" id="prop-target-bg" accept="image/png, image/jpeg" onchange="handleTargetImageUpload(event)">
+            <div id="target-bg-preview">デフォルト</div>
             
-            <button class="btn-full btn-apply" onclick="applyMarkerEdits()" style="margin-top: 10px;">ボタンの編集を反映</button>
+            <button class="btn-full btn-apply" onclick="applyMarkerEdits()" style="margin-top: 15px; font-size: 1.05rem; padding: 12px;">ボタンと移動先の設定を反映</button>
             <button class="btn-full" style="color: #e74c3c; border-color: #e74c3c; margin-top: 10px;" onclick="deleteSelectedMarker()">このボタンを削除</button>
         </div>
 
@@ -153,8 +155,7 @@
     let selectedMarkerIndex = null;
     let isDragging = false;
     let draggedElement = null; 
-    let tempBtnBgImage = null; 
-    let tempMapBgImage = null; 
+    let tempTargetMapImage = null; // 【変更】移動先マップ用の一時画像
 
     let mapData = {
         currentId: "national_01",
@@ -192,9 +193,8 @@
         document.getElementById('map-title').innerText = data.title;
         document.getElementById('map-image').src = data.image;
         
+        // 現在のマップ名入力欄を更新
         document.getElementById('map-prop-title').value = data.title;
-        tempMapBgImage = null; 
-        document.getElementById('map-prop-bg').value = "";
         
         const container = document.getElementById('marker-container');
         container.innerHTML = '';
@@ -211,11 +211,6 @@
             btn.style.top = m.y + "%";
             btn.style.fontSize = (m.fontSize || 16) + "px";
             btn.style.color = m.color || "#ffffff";
-            
-            if (m.bgImage && m.showBg !== false) {
-                btn.style.backgroundImage = `url(${m.bgImage})`;
-                btn.style.backgroundColor = "transparent";
-            }
 
             btn.onmousedown = (e) => {
                 if(!isAdmin) return;
@@ -224,7 +219,6 @@
                 isDragging = true; draggedElement = btn; 
             };
 
-            // ★ 一般ユーザー（ログアウト状態）ならクリックで移動する設定
             btn.onclick = (e) => {
                 e.stopPropagation();
                 if(!isAdmin) renderMap(m.targetId);
@@ -233,33 +227,23 @@
         });
     }
 
-    // --- 【追加】移動先へのダイレクトジャンプ機能 ---
+    // 現在のマップ名だけを変更する機能
+    function applyCurrentMapTitle() {
+        const titleInput = document.getElementById('map-prop-title').value;
+        if(titleInput) {
+            mapData.maps[mapData.currentId].title = titleInput;
+            document.getElementById('map-title').innerText = titleInput;
+        }
+    }
+
     function jumpToTarget() {
         const targetId = document.getElementById('prop-target').value;
         if(targetId) {
-            applyMarkerEdits(); // ジャンプする前に編集内容を保持
+            applyMarkerEdits(); 
             renderMap(targetId);
         } else {
             alert("移動先IDが設定されていません。");
         }
-    }
-    // ------------------------------------------------
-
-    function handleMapBgUpload(event) {
-        if (!event.target.files[0]) return;
-        const reader = new FileReader();
-        reader.onload = (e) => { tempMapBgImage = e.target.result; };
-        reader.readAsDataURL(event.target.files[0]);
-    }
-
-    function applyMapSettings() {
-        const titleInput = document.getElementById('map-prop-title').value;
-        if(titleInput) mapData.maps[mapData.currentId].title = titleInput;
-        if (tempMapBgImage !== null) {
-            mapData.maps[mapData.currentId].image = tempMapBgImage;
-            tempMapBgImage = null; 
-        }
-        renderMap(mapData.currentId, true);
     }
 
     function toggleGridView() {
@@ -286,29 +270,40 @@
     function addNewMarker() {
         mapData.maps[mapData.currentId].markers.push({
             x: 50, y: 50, fontSize: 16, color: "#ffffff", showBorder: true, showBg: true,
-            label: "新規ボタン", targetId: "map_" + Date.now().toString().slice(-4), bgImage: ""
+            label: "新規ボタン", targetId: "map_" + Date.now().toString().slice(-4)
         });
         renderMap(mapData.currentId, true);
     }
 
     function selectMarker(index) {
         selectedMarkerIndex = index;
-        tempBtnBgImage = null; 
+        tempTargetMapImage = null; 
         const m = mapData.maps[mapData.currentId].markers[index];
         const panel = document.getElementById('edit-panel');
         panel.style.opacity = 1; panel.style.pointerEvents = 'auto';
         
+        // ボタンの見た目設定
         document.getElementById('prop-label').value = m.label || "";
         document.getElementById('prop-size').value = m.fontSize || 16;
         document.getElementById('size-val').innerText = m.fontSize || 16;
         document.getElementById('prop-color').value = m.color || "#ffffff";
         document.getElementById('prop-bg-toggle').checked = m.showBg !== false;
         document.getElementById('prop-border-toggle').checked = m.showBorder !== false;
-        document.getElementById('prop-target').value = m.targetId || "";
         
-        const preview = document.getElementById('bg-preview');
-        if (m.bgImage) { preview.style.backgroundImage = `url(${m.bgImage})`; preview.innerText = ""; }
-        else { preview.style.backgroundImage = "none"; preview.innerText = "画像なし"; }
+        // 移動先の設定
+        const targetId = m.targetId || "";
+        document.getElementById('prop-target').value = targetId;
+        
+        // 【最重要】移動先のマップ画像を取得してプレビューに表示する
+        const preview = document.getElementById('target-bg-preview');
+        document.getElementById('prop-target-bg').value = ""; // ファイル選択状態をリセット
+        if (targetId && mapData.maps[targetId] && mapData.maps[targetId].image !== "kokka-map.png") {
+            preview.style.backgroundImage = `url(${mapData.maps[targetId].image})`;
+            preview.innerText = "";
+        } else {
+            preview.style.backgroundImage = "none";
+            preview.innerText = "未設定（デフォルト画像）";
+        }
 
         const allMarkers = document.querySelectorAll('.map-marker');
         allMarkers.forEach((el, i) => {
@@ -324,37 +319,56 @@
         document.querySelectorAll('.map-marker').forEach(el => el.classList.remove('selected'));
     }
 
+    // 【変更】移動先のマップ画像を読み込む
+    function handleTargetImageUpload(event) {
+        if (selectedMarkerIndex === null || !event.target.files[0]) return;
+        const reader = new FileReader();
+        reader.onload = (e) => { 
+            tempTargetMapImage = e.target.result;
+            const preview = document.getElementById('target-bg-preview');
+            preview.style.backgroundImage = `url(${tempTargetMapImage})`; 
+            preview.innerText = "";
+        };
+        reader.readAsDataURL(event.target.files[0]);
+    }
+
     function applyMarkerEdits() {
         if (selectedMarkerIndex === null) return;
         const m = mapData.maps[mapData.currentId].markers[selectedMarkerIndex];
+        
+        // 1. ボタンの見た目を更新
         m.label = document.getElementById('prop-label').value;
         m.fontSize = parseInt(document.getElementById('prop-size').value);
         m.color = document.getElementById('prop-color').value;
         m.showBg = document.getElementById('prop-bg-toggle').checked;
         m.showBorder = document.getElementById('prop-border-toggle').checked;
-        m.targetId = document.getElementById('prop-target').value;
-        if (tempBtnBgImage !== null) { m.bgImage = tempBtnBgImage; tempBtnBgImage = null; }
+        
+        // 2. 移動先IDを更新
+        const targetId = document.getElementById('prop-target').value;
+        m.targetId = targetId;
+
+        // 3. 【最重要】移動先IDのマップが存在しなければ自動生成し、画像があればそれを適用する
+        if (!mapData.maps[targetId]) {
+            // 新しく作られた部屋なら、とりあえずボタンと同じ名前をタイトルにしておく
+            mapData.maps[targetId] = { title: m.label, image: "kokka-map.png", markers: [] };
+        }
+        
+        // アップロードされた画像があれば、それを「移動先のマップの背景」として保存！
+        if (tempTargetMapImage !== null) {
+            mapData.maps[targetId].image = tempTargetMapImage;
+            tempTargetMapImage = null; // リセット
+        }
+        
         renderMap(mapData.currentId, true);
         setTimeout(() => selectMarker(selectedMarkerIndex), 50); 
     }
 
     function deleteSelectedMarker() {
         if (selectedMarkerIndex === null) return;
-        if (confirm("削除しますか？")) {
+        if (confirm("削除しますか？\n※ボタンを消しても、移動先のマップデータ自体は残ります。")) {
             mapData.maps[mapData.currentId].markers.splice(selectedMarkerIndex, 1);
             deselectMarker(); renderMap(mapData.currentId, true);
         }
-    }
-
-    function handleImageUpload(event) {
-        if (selectedMarkerIndex === null || !event.target.files[0]) return;
-        const reader = new FileReader();
-        reader.onload = (e) => { 
-            tempBtnBgImage = e.target.result;
-            document.getElementById('bg-preview').style.backgroundImage = `url(${tempBtnBgImage})`; 
-            document.getElementById('bg-preview').innerText = "";
-        };
-        reader.readAsDataURL(event.target.files[0]);
     }
 
     window.onmousemove = (e) => {
@@ -388,15 +402,11 @@
 
     async function saveToGitHub() {
         if(!githubToken) return;
-        
-        // コピー時の余分な空白が入ってエラーになるのを防ぐ
         const cleanToken = githubToken.trim(); 
-        
         const btn = document.querySelector('.btn-save');
         btn.innerText = "通信中...";
         const url = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${FILE_PATH}`;
         
-        // GitHub APIの最新公式フォーマットに厳密に合わせたヘッダー
         const headers = { 
             'Authorization': `Bearer ${cleanToken}`,
             'Accept': 'application/vnd.github+json',
@@ -404,45 +414,29 @@
         };
 
         try {
-            // 1. ファイルの最新状態（SHA）を取得
-            // ※ここでCache-Controlヘッダーを手動追加するとCORSエラー（Failed to fetch）になるため、オプションで指定
-            const getRes = await fetch(url, { 
-                headers: headers, 
-                cache: 'no-store' 
-            });
-            
+            const getRes = await fetch(url, { headers: headers, cache: 'no-store' });
             let fileSha = undefined;
             if (getRes.ok) {
                 const data = await getRes.json();
                 fileSha = data.sha;
             }
 
-            // 2. データをBase64に変換して送信
             const jsonString = JSON.stringify({ maps: mapData.maps }, null, 2);
             const encodedContent = btoa(unescape(encodeURIComponent(jsonString)));
             
             const putRes = await fetch(url, {
                 method: 'PUT',
-                headers: { 
-                    ...headers, 
-                    'Content-Type': 'application/json' 
-                },
-                body: JSON.stringify({ 
-                    message: "マップデータを更新", 
-                    content: encodedContent, 
-                    sha: fileSha 
-                })
+                headers: { ...headers, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message: "マップと背景データを更新", content: encodedContent, sha: fileSha })
             });
 
-            if (putRes.ok) {
-                alert("GitHubへの保存完了！\n反映まで1〜3分お待ちください。");
-            } else {
+            if (putRes.ok) alert("GitHubへの保存完了！\n反映まで1〜3分お待ちください。");
+            else {
                 const errorData = await putRes.json();
-                alert(`保存失敗 (GitHubからの返答):\n${errorData.message}`);
+                alert(`保存失敗:\n${errorData.message}`);
             }
         } catch (e) { 
-            alert(`通信エラー (Failed to fetch):\nブラウザが通信を遮断しました。\n\n詳細: ${e.message}`); 
-            console.error(e);
+            alert(`通信エラー:\n${e.message}`); 
         }
         btn.innerText = "変更をGitHubに保存";
     }
