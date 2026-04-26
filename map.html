@@ -22,8 +22,10 @@
         .sidebar-title { font-size: 1rem; margin: 0 0 10px 0; border-bottom: 2px solid #333; padding-bottom: 5px; }
         .sidebar label { display: block; font-size: 0.8rem; font-weight: bold; margin-top: 10px; margin-bottom: 5px; }
         .sidebar input[type="text"], .sidebar input[type="range"], .sidebar input[type="color"] { width: 100%; box-sizing: border-box; margin-bottom: 5px; padding: 5px; }
-        .sidebar .checkbox-group { display: flex; align-items: center; gap: 10px; margin: 10px 0; }
+        .sidebar .checkbox-group { display: flex; align-items: center; gap: 10px; margin: 5px 0; }
         .sidebar input[type="checkbox"] { width: auto; }
+        
+        .info-text { font-size: 0.75rem; color: #666; margin-bottom: 5px; }
         
         #bg-preview { width: 100%; height: 100px; border: 1px dashed #aaa; margin-top: 5px; background-size: cover; background-position: center; display: flex; align-items: center; justify-content: center; color: #aaa; font-size: 0.8rem; }
         .btn-full { width: 100%; padding: 10px; margin-top: 10px; border: 1px solid #333; background: white; }
@@ -48,15 +50,17 @@
             display: flex; align-items: center; justify-content: center; text-shadow: 1px 1px 3px rgba(0,0,0,0.8);
             transition: transform 0.1s; user-select: none; overflow: hidden; box-sizing: border-box;
             padding: 0.5em 1em; white-space: nowrap; min-width: 3em; min-height: 2em;
-            border: 2px solid transparent; /* デフォルト */
+            border: 2px solid transparent;
+            z-index: 10; /* 画像の下に隠れないように強制表示 */
         }
         
-        /* 枠線ありの状態（CSSで制御） */
+        .map-marker.no-bg { background-color: transparent !important; background-image: none !important; box-shadow: none !important; text-shadow: none !important; }
         .map-marker.has-border { border: 2px solid white; }
         
-        .map-marker:hover { transform: translate(-50%, -50%) scale(1.05); }
+        .map-marker:hover { transform: translate(-50%, -50%) scale(1.05); z-index: 20; }
         .editing .map-marker { cursor: move; }
-        .map-marker.selected { border: 3px solid #f1c40f !important; z-index: 100; box-shadow: 0 0 15px rgba(241, 196, 15, 0.8); }
+        
+        .map-marker.selected { border: 3px solid #f1c40f !important; z-index: 100 !important; box-shadow: 0 0 15px rgba(241, 196, 15, 0.8) !important; background-color: rgba(241, 196, 15, 0.2) !important; }
         
         body.is-admin .sidebar { display: flex; }
     </style>
@@ -78,25 +82,26 @@
         
         <div class="sidebar-section" id="edit-panel" style="opacity: 0.5; pointer-events: none;">
             <div class="sidebar-title">ボタンの編集</div>
-            
             <label>ボタン名</label>
             <input type="text" id="prop-label">
-            
             <label>文字サイズ (<span id="size-val">16</span>px)</label>
-            <input type="range" id="prop-size" min="10" max="60" value="16" oninput="document.getElementById('size-val').innerText=this.value;">
-            
+            <input type="range" id="prop-size" min="10" max="80" value="16" oninput="document.getElementById('size-val').innerText=this.value;">
             <label>文字の色</label>
             <input type="color" id="prop-color" value="#ffffff">
-
+            <div class="checkbox-group">
+                <input type="checkbox" id="prop-bg-toggle">
+                <label for="prop-bg-toggle" style="margin:0;">背景を表示する</label>
+            </div>
             <div class="checkbox-group">
                 <input type="checkbox" id="prop-border-toggle">
                 <label for="prop-border-toggle" style="margin:0;">枠線を表示する</label>
             </div>
-            
+            <div class="info-text" style="margin-top:10px; border-top: 1px solid #ddd; padding-top:10px;">
+                現在の確定サイズ: <span id="computed-size">--</span>
+            </div>
             <label>移動先ID</label>
             <input type="text" id="prop-target">
-            
-            <label>背景画像（任意）</label>
+            <label>背景画像（背景表示ON時のみ）</label>
             <input type="file" id="prop-bg" accept="image/png, image/jpeg" onchange="handleImageUpload(event)">
             <div id="bg-preview">画像なし</div>
             
@@ -135,12 +140,37 @@
     let draggedElement = null; 
     let tempBgImage = null;    
 
+    // 初期化データ（読み込みに失敗した場合の予備）
     let mapData = {
         currentId: "national_01",
         maps: {
             "national_01": { title: "国家全図", image: "kokka-map.png", markers: [] }
         }
     };
+
+    // --- 【追加】起動時に data.json を読み込む処理 ---
+    async function initApp() {
+        try {
+            // URLの末尾に時刻をつけてキャッシュ（古いデータ）を強制回避
+            const fetchUrl = `data.json?v=${new Date().getTime()}`;
+            const response = await fetch(fetchUrl);
+            
+            if (response.ok) {
+                const loadedData = await response.json();
+                // GitHubの構造が { maps: {...} } なのでそれを反映
+                if (loadedData && loadedData.maps) {
+                    mapData.maps = loadedData.maps;
+                }
+            } else {
+                console.warn("data.jsonが見つからないため、初期状態からスタートします。");
+            }
+        } catch (error) {
+            console.error("データの読み込みエラー:", error);
+        }
+        
+        // データの読み込みが終わってから最初の地図を描画する
+        renderMap("national_01");
+    }
 
     function renderMap(mapId, isBackAction = false) {
         if(!mapData.maps[mapId]) {
@@ -165,7 +195,9 @@
         data.markers.forEach((m, index) => {
             const btn = document.createElement('div');
             btn.className = 'map-marker';
+            
             if (m.showBorder) btn.classList.add('has-border');
+            if (m.showBg === false) btn.classList.add('no-bg');
             
             btn.innerText = m.label || "無名";
             btn.style.left = m.x + "%";
@@ -173,18 +205,16 @@
             btn.style.fontSize = (m.fontSize || 16) + "px";
             btn.style.color = m.color || "#ffffff";
             
-            if (m.bgImage) {
+            if (m.bgImage && m.showBg !== false) {
                 btn.style.backgroundImage = `url(${m.bgImage})`;
                 btn.style.backgroundColor = "transparent";
             }
 
             btn.onmousedown = (e) => {
                 if(!isAdmin) return;
-                e.stopPropagation();
-                e.preventDefault(); 
+                e.stopPropagation(); e.preventDefault(); 
                 selectMarker(index);
-                isDragging = true;
-                draggedElement = btn; 
+                isDragging = true; draggedElement = btn; 
             };
 
             btn.onclick = (e) => {
@@ -210,7 +240,7 @@
                 const tMap = mapData.maps[targetId];
                 const card = document.createElement('div');
                 card.className = 'grid-card';
-                card.innerHTML = `<img src="${tMap.image}"><h3 style="margin:10px 0;">${tMap.title}</h3><button class="btn-full" onclick="renderMap('${targetId}')">管理画面へ</button>`;
+                card.innerHTML = `<img src="${tMap.image}"><h3 style="margin:10px 0;">${tMap.title}</h3><button class="btn-full" onclick="renderMap('${targetId}')">編集</button>`;
                 grid.appendChild(card);
             });
         } else { renderMap(mapData.currentId, true); }
@@ -218,7 +248,7 @@
 
     function addNewMarker() {
         mapData.maps[mapData.currentId].markers.push({
-            x: 50, y: 50, fontSize: 16, color: "#ffffff", showBorder: true,
+            x: 50, y: 50, fontSize: 16, color: "#ffffff", showBorder: true, showBg: true,
             label: "新規ボタン", targetId: "map_" + Date.now().toString().slice(-4), bgImage: ""
         });
         renderMap(mapData.currentId, true);
@@ -235,6 +265,7 @@
         document.getElementById('prop-size').value = m.fontSize || 16;
         document.getElementById('size-val').innerText = m.fontSize || 16;
         document.getElementById('prop-color').value = m.color || "#ffffff";
+        document.getElementById('prop-bg-toggle').checked = m.showBg !== false;
         document.getElementById('prop-border-toggle').checked = m.showBorder !== false;
         document.getElementById('prop-target').value = m.targetId || "";
         
@@ -242,34 +273,38 @@
         if (m.bgImage) { preview.style.backgroundImage = `url(${m.bgImage})`; preview.innerText = ""; }
         else { preview.style.backgroundImage = "none"; preview.innerText = "画像なし"; }
 
-        document.querySelectorAll('.map-marker').forEach((el, i) => {
-            if (i === index) el.classList.add('selected');
-            else el.classList.remove('selected');
+        const allMarkers = document.querySelectorAll('.map-marker');
+        allMarkers.forEach((el, i) => {
+            if (i === index) {
+                el.classList.add('selected');
+                const rect = el.getBoundingClientRect();
+                document.getElementById('computed-size').innerText = `${Math.round(rect.width)}x${Math.round(rect.height)} px`;
+            } else {
+                el.classList.remove('selected');
+            }
         });
     }
 
     function deselectMarker() {
-        selectedMarkerIndex = null;
-        draggedElement = null;
+        selectedMarkerIndex = null; draggedElement = null;
         const panel = document.getElementById('edit-panel');
         panel.style.opacity = 0.5; panel.style.pointerEvents = 'none';
+        document.getElementById('computed-size').innerText = "--";
         document.querySelectorAll('.map-marker').forEach(el => el.classList.remove('selected'));
     }
 
     function applyMarkerEdits() {
         if (selectedMarkerIndex === null) return;
         const m = mapData.maps[mapData.currentId].markers[selectedMarkerIndex];
-        
         m.label = document.getElementById('prop-label').value;
         m.fontSize = parseInt(document.getElementById('prop-size').value);
         m.color = document.getElementById('prop-color').value;
+        m.showBg = document.getElementById('prop-bg-toggle').checked;
         m.showBorder = document.getElementById('prop-border-toggle').checked;
         m.targetId = document.getElementById('prop-target').value;
-        
         if (tempBgImage !== null) { m.bgImage = tempBgImage; tempBgImage = null; }
-        
         renderMap(mapData.currentId, true);
-        selectMarker(selectedMarkerIndex);
+        setTimeout(() => selectMarker(selectedMarkerIndex), 50); 
     }
 
     function deleteSelectedMarker() {
@@ -304,7 +339,6 @@
     };
     
     window.onmouseup = () => { isDragging = false; draggedElement = null; };
-    
     function goBack() { if (historyStack.length > 0) renderMap(historyStack.pop(), true); }
 
     function toggleAdmin() {
@@ -321,45 +355,29 @@
         } else { location.reload(); }
     }
 
-    // 日本語対応の保存処理
     async function saveToGitHub() {
         if(!githubToken) return;
         const btn = document.querySelector('.btn-save');
         btn.innerText = "通信中...";
         const url = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${FILE_PATH}`;
-        
         try {
-            // 最新のSHAを取得
-            const getRes = await fetch(url, { 
-                headers: { 'Authorization': `token ${githubToken}`, 'Cache-Control': 'no-cache' } 
-            });
+            const getRes = await fetch(url, { headers: { 'Authorization': `token ${githubToken}`, 'Cache-Control': 'no-cache' } });
             const fileSha = getRes.ok ? (await getRes.json()).sha : undefined;
-
-            // 日本語を壊さずにBase64化
             const jsonString = JSON.stringify({ maps: mapData.maps }, null, 2);
             const encodedContent = btoa(unescape(encodeURIComponent(jsonString)));
-
             const putRes = await fetch(url, {
                 method: 'PUT',
                 headers: { 'Authorization': `token ${githubToken}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    message: "Update map data",
-                    content: encodedContent,
-                    sha: fileSha
-                })
+                body: JSON.stringify({ message: "Update map data", content: encodedContent, sha: fileSha })
             });
-
-            if (putRes.ok) {
-                alert("GitHubへの保存が完了しました！\n反映まで1〜3分ほどお待ちください。");
-            } else {
-                const error = await putRes.json();
-                alert("保存エラー: " + error.message);
-            }
+            if (putRes.ok) alert("GitHubへの保存完了！");
+            else alert("保存失敗。トークン権限等を確認してください。");
         } catch (e) { alert("エラー: " + e.message); }
         btn.innerText = "変更をGitHubに保存";
     }
 
-    renderMap("national_01");
+    // --- 起動処理の実行 ---
+    initApp();
 </script>
 </body>
 </html>
