@@ -3,22 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>国家地図管理システム V3</title>
+    <title>エルノーラ地図管理システム</title>
     <style>
         :root { --primary: #2c3e50; --accent: #27ae60; --bg: #f0f2f5; --admin-bg: #ecf0f1; }
         body { font-family: 'Helvetica Neue', Arial, sans-serif; margin: 0; background: var(--bg); color: #333; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
         
-        /* ヘッダー */
         .header { background: var(--primary); color: white; padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; z-index: 1000; flex-shrink: 0; }
         .header h1 { margin: 0; font-size: 1.2rem; }
         button { cursor: pointer; border: none; border-radius: 4px; font-weight: bold; padding: 8px 15px; transition: 0.2s; }
         #auth-btn { background: white; color: var(--primary); }
         #back-btn { background: #34495e; color: white; margin-right: 15px; display: none; }
 
-        /* メインレイアウト */
         .app-container { display: flex; flex-grow: 1; overflow: hidden; }
         
-        /* サイドバー（管理者用） */
         .sidebar { width: 300px; background: white; border-right: 2px solid #ddd; padding: 20px; box-sizing: border-box; display: none; flex-direction: column; overflow-y: auto; flex-shrink: 0; }
         .sidebar-section { border: 1px solid #ccc; padding: 15px; margin-bottom: 15px; border-radius: 5px; background: #fafafa; }
         .sidebar-title { font-size: 1rem; margin: 0 0 10px 0; border-bottom: 2px solid #333; padding-bottom: 5px; }
@@ -29,18 +26,15 @@
         .btn-full:hover { background: #eee; }
         .btn-save { background: #e74c3c; color: white; border: none; font-size: 1.1rem; }
 
-        /* マップ表示エリア */
         .main-content { flex-grow: 1; padding: 20px; overflow: auto; display: flex; justify-content: center; align-items: flex-start; position: relative; }
         #map-viewport { position: relative; width: 100%; max-width: 1000px; background: white; box-shadow: 0 5px 20px rgba(0,0,0,0.1); touch-action: none; display: block; }
         #map-image { width: 100%; display: block; user-select: none; -webkit-user-drag: none; }
 
-        /* グリッドビュー（都市一覧）エリア */
         #grid-view { display: none; width: 100%; max-width: 1200px; padding: 20px; box-sizing: border-box; }
         .grid-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px; }
         .grid-card { background: white; border: 1px solid #ccc; border-radius: 8px; padding: 15px; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
         .grid-card img { width: 100%; height: 150px; object-fit: cover; background: #eee; border-radius: 4px; margin-bottom: 10px; }
 
-        /* マップ上のボタン */
         .map-marker {
             position: absolute; transform: translate(-50%, -50%);
             background-color: rgba(39, 174, 96, 0.9); background-size: cover; background-position: center;
@@ -50,7 +44,6 @@
         }
         .map-marker:hover { transform: translate(-50%, -50%) scale(1.05); }
         
-        /* 編集状態 */
         .editing .map-marker { cursor: move; border: 2px solid transparent; }
         .map-marker.selected { border: 3px solid #f1c40f; z-index: 100; box-shadow: 0 0 15px rgba(241, 196, 15, 0.8); }
         
@@ -69,51 +62,42 @@
 
 <div class="app-container">
     <div class="sidebar" id="sidebar">
-        <h2 style="margin-top: 0; color: #e74c3c; font-size: 1.2rem;">管理画面</h2>
-        
+        <h2 style="margin-top: 0; color: #e74c3c; font-size: 1.2rem;">管理パネル</h2>
         <button class="btn-full" style="border-color: #27ae60; color: #27ae60; font-weight: bold;" onclick="addNewMarker()">＋ ボタン追加</button>
         
         <div class="sidebar-section" id="edit-panel" style="opacity: 0.5; pointer-events: none;">
             <div class="sidebar-title">選択中のボタン編集</div>
-            
             <label>ボタン名変更</label>
             <input type="text" id="prop-label" oninput="updateMarkerProp('label', this.value)">
-            
             <label>文字サイズ変更 (<span id="size-val">16</span>px)</label>
             <input type="range" id="prop-size" min="10" max="50" value="16" oninput="updateMarkerProp('fontSize', this.value); document.getElementById('size-val').innerText=this.value;">
-            
-            <label>移動先ID (半角英数)</label>
+            <label>移動先ID</label>
             <input type="text" id="prop-target" oninput="updateMarkerProp('targetId', this.value)">
-
-            <label>ボタン背景画像設定</label>
+            <label>ボタン背景画像</label>
             <input type="file" id="prop-bg" accept="image/png, image/jpeg" onchange="handleImageUpload(event)">
             <div id="bg-preview">画像なし</div>
-
             <button class="btn-full" style="color: #e74c3c; border-color: #e74c3c; margin-top: 20px;" onclick="deleteSelectedMarker()">このボタンを削除</button>
         </div>
 
         <button class="btn-full" onclick="toggleGridView()" id="view-toggle-btn">各都市画面移動ボタン</button>
-        
         <div style="flex-grow: 1;"></div>
         <button class="btn-full btn-save" onclick="saveToGitHub()">変更を保存</button>
     </div>
 
     <div class="main-content">
         <div id="map-viewport">
-            <img id="map-image" src="https://via.placeholder.com/1000x600/2c3e50/ffffff?text=National+Map" alt="Map">
+            <img id="map-image" src="kokka-map.png" alt="Map">
             <div id="marker-container"></div>
         </div>
-
         <div id="grid-view">
-            <h2 style="margin-top:0;">このマップ内の区画一覧</h2>
-            <div class="grid-container" id="grid-container">
-                </div>
+            <h2 style="margin-top:0;">区画一覧</h2>
+            <div class="grid-container" id="grid-container"></div>
         </div>
     </div>
 </div>
 
 <script>
-    // --- GitHub設定 ---
+    // --- ユーザー指定設定 ---
     const REPO_OWNER = 'Charlotte5227';
     const REPO_NAME = 'map-Elnora';
     const FILE_PATH = 'data.json';
@@ -121,20 +105,18 @@
     let isAdmin = false;
     let githubToken = "";
     let historyStack = [];
-    let currentMode = 'map'; // 'map' or 'grid'
-    
-    // ドラッグ＆選択状態の管理
+    let currentMode = 'map'; 
     let selectedMarkerIndex = null;
     let isDragging = false;
 
+    // 初期状態：kokka-map.png を背景にする
     let mapData = {
         currentId: "national_01",
         maps: {
-            "national_01": { title: "国家全図", image: "kokka-map", markers: [] }
+            "national_01": { title: "国家全図", image: "kokka-map.png", markers: [] }
         }
     };
 
-    // --- 描画処理 ---
     function renderMap(mapId, isBackAction = false) {
         if(!mapData.maps[mapId]) {
             mapData.maps[mapId] = { title: "新しい区画", image: "kokka-map.png", markers: [] };
@@ -142,15 +124,13 @@
 
         if (!isBackAction && mapData.currentId !== mapId) historyStack.push(mapData.currentId);
         mapData.currentId = mapId;
-        
         document.getElementById('back-btn').style.display = historyStack.length > 0 ? 'inline-block' : 'none';
         
         currentMode = 'map';
         document.getElementById('map-viewport').style.display = 'block';
         document.getElementById('grid-view').style.display = 'none';
         document.getElementById('view-toggle-btn').innerText = "各都市画面移動ボタン";
-        
-        deselectMarker(); // 画面遷移時は選択解除
+        deselectMarker();
 
         const data = mapData.maps[mapId];
         document.getElementById('map-title').innerText = data.title;
@@ -176,7 +156,6 @@
                 btn.style.backgroundColor = "transparent";
             }
 
-            // ドラッグ＆選択イベント
             btn.onmousedown = (e) => {
                 if(!isAdmin) return;
                 e.stopPropagation();
@@ -188,52 +167,31 @@
                 e.stopPropagation();
                 if(!isAdmin) renderMap(m.targetId);
             };
-
             container.appendChild(btn);
         });
     }
 
-    // --- グリッドビュー（子マップ一覧）処理 ---
     function toggleGridView() {
         if (currentMode === 'map') {
             currentMode = 'grid';
             document.getElementById('map-viewport').style.display = 'none';
             document.getElementById('grid-view').style.display = 'block';
-            document.getElementById('view-toggle-btn').innerText = "マップ画面に戻る";
-            
+            document.getElementById('view-toggle-btn').innerText = "マップに戻る";
             const grid = document.getElementById('grid-container');
             grid.innerHTML = '';
-            
             const markers = mapData.maps[mapData.currentId].markers;
-            if(markers.length === 0) {
-                grid.innerHTML = '<p>このマップにはまだボタン（区画）が配置されていません。</p>';
-                return;
-            }
-
-            // 現在のマップにあるボタンの移動先をリストアップ
             markers.forEach(m => {
                 const targetId = m.targetId;
-                if(!mapData.maps[targetId]) {
-                    mapData.maps[targetId] = { title: m.label + "のマップ", image: "https://via.placeholder.com/1000x600/bdc3c7/ffffff?text=No+Image", markers: [] };
-                }
+                if(!mapData.maps[targetId]) mapData.maps[targetId] = { title: m.label, image: "kokka-map.png", markers: [] };
                 const tMap = mapData.maps[targetId];
-
                 const card = document.createElement('div');
                 card.className = 'grid-card';
-                card.innerHTML = `
-                    <img src="${tMap.image}" alt="Preview">
-                    <h3 style="margin: 10px 0;">${tMap.title}</h3>
-                    <p style="font-size: 0.8rem; color: #666;">ID: ${targetId}</p>
-                    <button class="btn-full" onclick="renderMap('${targetId}')">この管理画面へ移動</button>
-                `;
+                card.innerHTML = `<img src="${tMap.image}"><h3 style="margin:10px 0;">${tMap.title}</h3><button class="btn-full" onclick="renderMap('${targetId}')">編集</button>`;
                 grid.appendChild(card);
             });
-        } else {
-            renderMap(mapData.currentId, true); // マップに戻る
-        }
+        } else { renderMap(mapData.currentId, true); }
     }
 
-    // --- マーカー管理機能 ---
     function addNewMarker() {
         mapData.maps[mapData.currentId].markers.push({
             x: 50, y: 50, width: 120, height: 60, fontSize: 16,
@@ -246,35 +204,22 @@
     function selectMarker(index) {
         selectedMarkerIndex = index;
         const m = mapData.maps[mapData.currentId].markers[index];
-        
-        // パネルの有効化と値のセット
         const panel = document.getElementById('edit-panel');
-        panel.style.opacity = 1;
-        panel.style.pointerEvents = 'auto';
-        
-        document.getElementById('prop-label').value = m.label || "";
-        document.getElementById('prop-size').value = m.fontSize || 16;
-        document.getElementById('size-val').innerText = m.fontSize || 16;
-        document.getElementById('prop-target').value = m.targetId || "";
-        
+        panel.style.opacity = 1; panel.style.pointerEvents = 'auto';
+        document.getElementById('prop-label').value = m.label;
+        document.getElementById('prop-size').value = m.fontSize;
+        document.getElementById('size-val').innerText = m.fontSize;
+        document.getElementById('prop-target').value = m.targetId;
         const preview = document.getElementById('bg-preview');
-        if (m.bgImage) {
-            preview.style.backgroundImage = `url(${m.bgImage})`;
-            preview.innerText = "";
-        } else {
-            preview.style.backgroundImage = "none";
-            preview.innerText = "画像なし";
-        }
-
-        renderMap(mapData.currentId, true); // 選択枠をつけるために再描画
+        if (m.bgImage) { preview.style.backgroundImage = `url(${m.bgImage})`; preview.innerText = ""; }
+        else { preview.style.backgroundImage = "none"; preview.innerText = "画像なし"; }
+        renderMap(mapData.currentId, true);
     }
 
     function deselectMarker() {
         selectedMarkerIndex = null;
         const panel = document.getElementById('edit-panel');
-        panel.style.opacity = 0.5;
-        panel.style.pointerEvents = 'none';
-        document.getElementById('prop-label').value = "";
+        panel.style.opacity = 0.5; panel.style.pointerEvents = 'none';
     }
 
     function updateMarkerProp(key, value) {
@@ -285,55 +230,32 @@
 
     function deleteSelectedMarker() {
         if (selectedMarkerIndex === null) return;
-        if (confirm("このボタンを削除しますか？（リンク先のマップデータは残ります）")) {
+        if (confirm("削除しますか？")) {
             mapData.maps[mapData.currentId].markers.splice(selectedMarkerIndex, 1);
-            deselectMarker();
-            renderMap(mapData.currentId, true);
+            deselectMarker(); renderMap(mapData.currentId, true);
         }
     }
 
-    // 画像ファイルをBase64に変換して保存
     function handleImageUpload(event) {
         if (selectedMarkerIndex === null || !event.target.files[0]) return;
-        const file = event.target.files[0];
         const reader = new FileReader();
-        reader.onload = function(e) {
-            updateMarkerProp('bgImage', e.target.result);
-            selectMarker(selectedMarkerIndex); // プレビュー更新
-        };
-        reader.readAsDataURL(file);
+        reader.onload = (e) => { updateMarkerProp('bgImage', e.target.result); selectMarker(selectedMarkerIndex); };
+        reader.readAsDataURL(event.target.files[0]);
     }
 
-    // --- ドラッグ処理（背景クリックで選択解除） ---
     window.onmousemove = (e) => {
-        if(!isDragging || selectedMarkerIndex === null || currentMode !== 'map') return;
+        if(!isDragging || selectedMarkerIndex === null) return;
         const viewport = document.getElementById('map-viewport');
         const rect = viewport.getBoundingClientRect();
-        let x = ((e.clientX - rect.left) / rect.width) * 100;
-        let y = ((e.clientY - rect.top) / rect.height) * 100;
-        x = Math.max(0, Math.min(100, x));
-        y = Math.max(0, Math.min(100, y));
-
+        let x = Math.max(0, Math.min(100, ((e.clientX - rect.left) / rect.width) * 100));
+        let y = Math.max(0, Math.min(100, ((e.clientY - rect.top) / rect.height) * 100));
         mapData.maps[mapData.currentId].markers[selectedMarkerIndex].x = x.toFixed(2);
         mapData.maps[mapData.currentId].markers[selectedMarkerIndex].y = y.toFixed(2);
-        
-        // リアルタイムDOM操作（再描画すると重いため）
-        const markers = document.getElementsByClassName('map-marker');
-        if(markers[selectedMarkerIndex]) {
-            markers[selectedMarkerIndex].style.left = x + "%";
-            markers[selectedMarkerIndex].style.top = y + "%";
-        }
+        renderMap(mapData.currentId, true);
     };
     
     window.onmouseup = () => { isDragging = false; };
     
-    document.getElementById('map-viewport').onclick = (e) => {
-        if (e.target.id === 'map-viewport' || e.target.id === 'map-image') {
-            if (isAdmin) { deselectMarker(); renderMap(mapData.currentId, true); }
-        }
-    };
-
-    // --- 管理者・GitHub関連（前回と同じ） ---
     function goBack() { if (historyStack.length > 0) renderMap(historyStack.pop(), true); }
 
     function toggleAdmin() {
@@ -344,7 +266,7 @@
                     isAdmin = true;
                     document.body.classList.add('is-admin', 'editing');
                     document.getElementById('auth-btn').innerText = "ログアウト";
-                    renderMap(mapData.currentId, true); // サイズ調整のため
+                    renderMap(mapData.currentId, true);
                 }
             }
         } else { location.reload(); }
@@ -362,7 +284,7 @@
                 method: 'PUT',
                 headers: { 'Authorization': `token ${githubToken}`, 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    message: "Update Map UI",
+                    message: "Update data",
                     content: btoa(unescape(encodeURIComponent(JSON.stringify({ maps: mapData.maps }, null, 2)))),
                     sha: fileSha
                 })
