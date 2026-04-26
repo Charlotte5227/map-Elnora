@@ -17,9 +17,9 @@
         .app-container { display: flex; flex-grow: 1; overflow: hidden; }
         
         /* サイドバー */
-        .sidebar { width: 300px; background: white; border-right: 2px solid #ddd; padding: 20px; box-sizing: border-box; display: none; flex-direction: column; overflow-y: auto; flex-shrink: 0; }
+        .sidebar { width: 320px; background: white; border-right: 2px solid #ddd; padding: 20px; box-sizing: border-box; display: none; flex-direction: column; overflow-y: auto; flex-shrink: 0; }
         .sidebar-section { border: 1px solid #ccc; padding: 15px; margin-bottom: 15px; border-radius: 5px; background: #fafafa; }
-        .sidebar-title { font-size: 1rem; margin: 0 0 10px 0; border-bottom: 2px solid #333; padding-bottom: 5px; }
+        .sidebar-title { font-size: 1rem; margin: 0 0 10px 0; border-bottom: 2px solid #333; padding-bottom: 5px; color: #2c3e50; font-weight: bold; }
         .sidebar label { display: block; font-size: 0.8rem; font-weight: bold; margin-top: 10px; margin-bottom: 5px; }
         .sidebar input[type="text"], .sidebar input[type="range"], .sidebar input[type="color"] { width: 100%; box-sizing: border-box; margin-bottom: 5px; padding: 5px; }
         .sidebar .checkbox-group { display: flex; align-items: center; gap: 10px; margin: 5px 0; }
@@ -27,10 +27,10 @@
         
         .info-text { font-size: 0.75rem; color: #666; margin-bottom: 5px; }
         
-        #bg-preview { width: 100%; height: 100px; border: 1px dashed #aaa; margin-top: 5px; background-size: cover; background-position: center; display: flex; align-items: center; justify-content: center; color: #aaa; font-size: 0.8rem; }
+        #bg-preview { width: 100%; height: 80px; border: 1px dashed #aaa; margin-top: 5px; background-size: cover; background-position: center; display: flex; align-items: center; justify-content: center; color: #aaa; font-size: 0.8rem; }
         .btn-full { width: 100%; padding: 10px; margin-top: 10px; border: 1px solid #333; background: white; }
         .btn-full:hover { background: #eee; }
-        .btn-apply { background: #3498db; color: white; border: none; margin-top: 15px; }
+        .btn-apply { background: #3498db; color: white; border: none; }
         .btn-save { background: #e74c3c; color: white; border: none; font-size: 1.1rem; }
 
         .main-content { flex-grow: 1; padding: 20px; overflow: auto; display: flex; justify-content: center; align-items: flex-start; position: relative; }
@@ -50,16 +50,13 @@
             display: flex; align-items: center; justify-content: center; text-shadow: 1px 1px 3px rgba(0,0,0,0.8);
             transition: transform 0.1s; user-select: none; overflow: hidden; box-sizing: border-box;
             padding: 0.5em 1em; white-space: nowrap; min-width: 3em; min-height: 2em;
-            border: 2px solid transparent;
-            z-index: 10; /* 画像の下に隠れないように強制表示 */
+            border: 2px solid transparent; z-index: 10;
         }
         
         .map-marker.no-bg { background-color: transparent !important; background-image: none !important; box-shadow: none !important; text-shadow: none !important; }
         .map-marker.has-border { border: 2px solid white; }
-        
         .map-marker:hover { transform: translate(-50%, -50%) scale(1.05); z-index: 20; }
         .editing .map-marker { cursor: move; }
-        
         .map-marker.selected { border: 3px solid #f1c40f !important; z-index: 100 !important; box-shadow: 0 0 15px rgba(241, 196, 15, 0.8) !important; background-color: rgba(241, 196, 15, 0.2) !important; }
         
         body.is-admin .sidebar { display: flex; }
@@ -77,40 +74,58 @@
 
 <div class="app-container">
     <div class="sidebar" id="sidebar">
-        <h2 style="margin-top: 0; color: #e74c3c; font-size: 1.2rem;">管理パネル</h2>
-        <button class="btn-full" style="border-color: #27ae60; color: #27ae60; font-weight: bold;" onclick="addNewMarker()">＋ ボタン追加</button>
         
-        <div class="sidebar-section" id="edit-panel" style="opacity: 0.5; pointer-events: none;">
-            <div class="sidebar-title">ボタンの編集</div>
+        <div class="sidebar-section" style="background: #e8f4f8; border-color: #3498db;">
+            <div class="sidebar-title">🗺️ 現在のマップ設定</div>
+            <label>区画の名前</label>
+            <input type="text" id="map-prop-title">
+            <label>マップ背景画像</label>
+            <input type="file" id="map-prop-bg" accept="image/png, image/jpeg" onchange="handleMapBgUpload(event)">
+            <button class="btn-full btn-apply" onclick="applyMapSettings()" style="margin-top: 10px;">マップ設定を反映</button>
+        </div>
+
+        <button class="btn-full" style="border-color: #27ae60; color: #27ae60; font-weight: bold;" onclick="addNewMarker()">＋ 新しいボタンを配置</button>
+        
+        <div class="sidebar-section" id="edit-panel" style="opacity: 0.5; pointer-events: none; margin-top: 15px;">
+            <div class="sidebar-title">🔘 選択中のボタン編集</div>
             <label>ボタン名</label>
             <input type="text" id="prop-label">
-            <label>文字サイズ (<span id="size-val">16</span>px)</label>
-            <input type="range" id="prop-size" min="10" max="80" value="16" oninput="document.getElementById('size-val').innerText=this.value;">
-            <label>文字の色</label>
-            <input type="color" id="prop-color" value="#ffffff">
-            <div class="checkbox-group">
+            
+            <div style="display: flex; gap: 10px; margin-top: 10px;">
+                <div style="flex: 1;">
+                    <label style="margin-top: 0;">文字サイズ</label>
+                    <input type="range" id="prop-size" min="10" max="80" value="16" oninput="document.getElementById('size-val').innerText=this.value;">
+                    <div style="font-size:0.75rem; text-align:center;"><span id="size-val">16</span>px</div>
+                </div>
+                <div style="flex: 1;">
+                    <label style="margin-top: 0;">文字色</label>
+                    <input type="color" id="prop-color" value="#ffffff" style="height: 35px;">
+                </div>
+            </div>
+
+            <div class="checkbox-group" style="margin-top: 10px;">
                 <input type="checkbox" id="prop-bg-toggle">
-                <label for="prop-bg-toggle" style="margin:0;">背景を表示する</label>
+                <label for="prop-bg-toggle" style="margin:0;">背景を表示</label>
+                <input type="checkbox" id="prop-border-toggle" style="margin-left: 10px;">
+                <label for="prop-border-toggle" style="margin:0;">枠線を表示</label>
             </div>
-            <div class="checkbox-group">
-                <input type="checkbox" id="prop-border-toggle">
-                <label for="prop-border-toggle" style="margin:0;">枠線を表示する</label>
+            
+            <label style="margin-top: 15px;">移動先ID</label>
+            <div style="display: flex; gap: 5px; margin-bottom: 5px;">
+                <input type="text" id="prop-target" style="margin-bottom: 0;">
+                <button onclick="jumpToTarget()" style="background: #34495e; color: white; padding: 5px 10px;">🚀 ジャンプ</button>
             </div>
-            <div class="info-text" style="margin-top:10px; border-top: 1px solid #ddd; padding-top:10px;">
-                現在の確定サイズ: <span id="computed-size">--</span>
-            </div>
-            <label>移動先ID</label>
-            <input type="text" id="prop-target">
-            <label>背景画像（背景表示ON時のみ）</label>
+
+            <label>ボタン画像（背景ON時）</label>
             <input type="file" id="prop-bg" accept="image/png, image/jpeg" onchange="handleImageUpload(event)">
             <div id="bg-preview">画像なし</div>
             
-            <button class="btn-full btn-apply" onclick="applyMarkerEdits()">編集内容を反映</button>
+            <button class="btn-full btn-apply" onclick="applyMarkerEdits()" style="margin-top: 10px;">ボタンの編集を反映</button>
             <button class="btn-full" style="color: #e74c3c; border-color: #e74c3c; margin-top: 10px;" onclick="deleteSelectedMarker()">このボタンを削除</button>
         </div>
 
-        <button class="btn-full" onclick="toggleGridView()" id="view-toggle-btn">各都市画面移動ボタン</button>
-        <div style="flex-grow: 1;"></div>
+        <button class="btn-full" onclick="toggleGridView()" id="view-toggle-btn">区画一覧（グリッド表示）</button>
+        <div style="flex-grow: 1; min-height: 20px;"></div>
         <button class="btn-full btn-save" onclick="saveToGitHub()">変更をGitHubに保存</button>
     </div>
 
@@ -138,9 +153,9 @@
     let selectedMarkerIndex = null;
     let isDragging = false;
     let draggedElement = null; 
-    let tempBgImage = null;    
+    let tempBtnBgImage = null; 
+    let tempMapBgImage = null; 
 
-    // 初期化データ（読み込みに失敗した場合の予備）
     let mapData = {
         currentId: "national_01",
         maps: {
@@ -148,27 +163,15 @@
         }
     };
 
-    // --- 【追加】起動時に data.json を読み込む処理 ---
     async function initApp() {
         try {
-            // URLの末尾に時刻をつけてキャッシュ（古いデータ）を強制回避
             const fetchUrl = `data.json?v=${new Date().getTime()}`;
             const response = await fetch(fetchUrl);
-            
             if (response.ok) {
                 const loadedData = await response.json();
-                // GitHubの構造が { maps: {...} } なのでそれを反映
-                if (loadedData && loadedData.maps) {
-                    mapData.maps = loadedData.maps;
-                }
-            } else {
-                console.warn("data.jsonが見つからないため、初期状態からスタートします。");
+                if (loadedData && loadedData.maps) mapData.maps = loadedData.maps;
             }
-        } catch (error) {
-            console.error("データの読み込みエラー:", error);
-        }
-        
-        // データの読み込みが終わってから最初の地図を描画する
+        } catch (error) { console.warn("初期データの読み込みエラー"); }
         renderMap("national_01");
     }
 
@@ -188,6 +191,10 @@
         const data = mapData.maps[mapId];
         document.getElementById('map-title').innerText = data.title;
         document.getElementById('map-image').src = data.image;
+        
+        document.getElementById('map-prop-title').value = data.title;
+        tempMapBgImage = null; 
+        document.getElementById('map-prop-bg').value = "";
         
         const container = document.getElementById('marker-container');
         container.innerHTML = '';
@@ -217,12 +224,42 @@
                 isDragging = true; draggedElement = btn; 
             };
 
+            // ★ 一般ユーザー（ログアウト状態）ならクリックで移動する設定
             btn.onclick = (e) => {
                 e.stopPropagation();
                 if(!isAdmin) renderMap(m.targetId);
             };
             container.appendChild(btn);
         });
+    }
+
+    // --- 【追加】移動先へのダイレクトジャンプ機能 ---
+    function jumpToTarget() {
+        const targetId = document.getElementById('prop-target').value;
+        if(targetId) {
+            applyMarkerEdits(); // ジャンプする前に編集内容を保持
+            renderMap(targetId);
+        } else {
+            alert("移動先IDが設定されていません。");
+        }
+    }
+    // ------------------------------------------------
+
+    function handleMapBgUpload(event) {
+        if (!event.target.files[0]) return;
+        const reader = new FileReader();
+        reader.onload = (e) => { tempMapBgImage = e.target.result; };
+        reader.readAsDataURL(event.target.files[0]);
+    }
+
+    function applyMapSettings() {
+        const titleInput = document.getElementById('map-prop-title').value;
+        if(titleInput) mapData.maps[mapData.currentId].title = titleInput;
+        if (tempMapBgImage !== null) {
+            mapData.maps[mapData.currentId].image = tempMapBgImage;
+            tempMapBgImage = null; 
+        }
+        renderMap(mapData.currentId, true);
     }
 
     function toggleGridView() {
@@ -240,7 +277,7 @@
                 const tMap = mapData.maps[targetId];
                 const card = document.createElement('div');
                 card.className = 'grid-card';
-                card.innerHTML = `<img src="${tMap.image}"><h3 style="margin:10px 0;">${tMap.title}</h3><button class="btn-full" onclick="renderMap('${targetId}')">編集</button>`;
+                card.innerHTML = `<img src="${tMap.image}"><h3 style="margin:10px 0;">${tMap.title}</h3><button class="btn-full" onclick="renderMap('${targetId}')">管理画面へ</button>`;
                 grid.appendChild(card);
             });
         } else { renderMap(mapData.currentId, true); }
@@ -256,7 +293,7 @@
 
     function selectMarker(index) {
         selectedMarkerIndex = index;
-        tempBgImage = null; 
+        tempBtnBgImage = null; 
         const m = mapData.maps[mapData.currentId].markers[index];
         const panel = document.getElementById('edit-panel');
         panel.style.opacity = 1; panel.style.pointerEvents = 'auto';
@@ -275,13 +312,8 @@
 
         const allMarkers = document.querySelectorAll('.map-marker');
         allMarkers.forEach((el, i) => {
-            if (i === index) {
-                el.classList.add('selected');
-                const rect = el.getBoundingClientRect();
-                document.getElementById('computed-size').innerText = `${Math.round(rect.width)}x${Math.round(rect.height)} px`;
-            } else {
-                el.classList.remove('selected');
-            }
+            if (i === index) el.classList.add('selected');
+            else el.classList.remove('selected');
         });
     }
 
@@ -289,7 +321,6 @@
         selectedMarkerIndex = null; draggedElement = null;
         const panel = document.getElementById('edit-panel');
         panel.style.opacity = 0.5; panel.style.pointerEvents = 'none';
-        document.getElementById('computed-size').innerText = "--";
         document.querySelectorAll('.map-marker').forEach(el => el.classList.remove('selected'));
     }
 
@@ -302,7 +333,7 @@
         m.showBg = document.getElementById('prop-bg-toggle').checked;
         m.showBorder = document.getElementById('prop-border-toggle').checked;
         m.targetId = document.getElementById('prop-target').value;
-        if (tempBgImage !== null) { m.bgImage = tempBgImage; tempBgImage = null; }
+        if (tempBtnBgImage !== null) { m.bgImage = tempBtnBgImage; tempBtnBgImage = null; }
         renderMap(mapData.currentId, true);
         setTimeout(() => selectMarker(selectedMarkerIndex), 50); 
     }
@@ -319,8 +350,8 @@
         if (selectedMarkerIndex === null || !event.target.files[0]) return;
         const reader = new FileReader();
         reader.onload = (e) => { 
-            tempBgImage = e.target.result;
-            document.getElementById('bg-preview').style.backgroundImage = `url(${tempBgImage})`; 
+            tempBtnBgImage = e.target.result;
+            document.getElementById('bg-preview').style.backgroundImage = `url(${tempBtnBgImage})`; 
             document.getElementById('bg-preview').innerText = "";
         };
         reader.readAsDataURL(event.target.files[0]);
@@ -376,7 +407,6 @@
         btn.innerText = "変更をGitHubに保存";
     }
 
-    // --- 起動処理の実行 ---
     initApp();
 </script>
 </body>
