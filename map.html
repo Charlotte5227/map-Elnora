@@ -137,7 +137,7 @@
     // --- 描画処理 ---
     function renderMap(mapId, isBackAction = false) {
         if(!mapData.maps[mapId]) {
-            mapData.maps[mapId] = { title: "新しい区画", image: "https://via.placeholder.com/1000x600/bdc3c7/ffffff?text=No+Image", markers: [] };
+            mapData.maps[mapId] = { title: "新しい区画", image: "kokka-map.png", markers: [] };
         }
 
         if (!isBackAction && mapData.currentId !== mapId) historyStack.push(mapData.currentId);
