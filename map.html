@@ -34,7 +34,13 @@
         .btn-save { background: #e74c3c; color: white; border: none; font-size: 1.1rem; }
 
         .main-content { flex-grow: 1; padding: 20px; overflow: auto; display: flex; justify-content: center; align-items: flex-start; position: relative; }
-        #map-viewport { position: relative; width: 100%; max-width: 1000px; background: white; box-shadow: 0 5px 20px rgba(0,0,0,0.1); touch-action: none; display: block; }
+        
+        /* ★重要：マップをコンテナとして定義し、内部のサイズ計算の基準にする */
+        #map-viewport { 
+            position: relative; width: 100%; max-width: 1000px; background: white; 
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1); touch-action: none; display: block;
+            container-type: inline-size; 
+        }
         #map-image { width: 100%; display: block; user-select: none; -webkit-user-drag: none; }
 
         #grid-view { display: none; width: 100%; max-width: 1200px; padding: 20px; box-sizing: border-box; }
@@ -42,22 +48,27 @@
         .grid-card { background: white; border: 1px solid #ccc; border-radius: 8px; padding: 15px; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
         .grid-card img { width: 100%; height: 150px; object-fit: cover; background: #eee; border-radius: 4px; margin-bottom: 10px; }
 
-        /* マップ上のボタン */
+        /* ★変更：マップ上のボタン（すべて文字サイズ(em)に連動して伸び縮みする単位に変更） */
         .map-marker {
             position: absolute; transform: translate(-50%, -50%);
-            background-color: rgba(39, 174, 96, 0.9);
-            color: white; border-radius: 8px; font-weight: bold; box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-            display: flex; align-items: center; justify-content: center; text-shadow: 1px 1px 3px rgba(0,0,0,0.8);
+            background-color: rgba(39, 174, 96, 0.9); background-size: cover; background-position: center;
+            color: white; font-weight: bold; 
+            display: flex; align-items: center; justify-content: center; 
             transition: transform 0.1s; user-select: none; overflow: hidden; box-sizing: border-box;
+            
+            /* em単位を使うことで、文字サイズに連動して枠線・丸み・影・余白がすべて一緒に縮みます */
+            border-radius: 0.5em; 
+            box-shadow: 0 0.25em 0.6em rgba(0,0,0,0.3);
+            text-shadow: 0.05em 0.05em 0.15em rgba(0,0,0,0.8);
             padding: 0.5em 1em; white-space: nowrap; min-width: 3em; min-height: 2em;
-            border: 2px solid transparent; z-index: 10;
+            border: 0.15em solid transparent; z-index: 10;
         }
         
-        .map-marker.no-bg { background-color: transparent !important; box-shadow: none !important; text-shadow: 1px 1px 2px rgba(0,0,0,0.8) !important; }
-        .map-marker.has-border { border: 2px solid white; }
+        .map-marker.no-bg { background-color: transparent !important; background-image: none !important; box-shadow: none !important; text-shadow: 0.05em 0.05em 0.15em rgba(0,0,0,0.8) !important; }
+        .map-marker.has-border { border-color: white; }
         .map-marker:hover { transform: translate(-50%, -50%) scale(1.05); z-index: 20; }
         .editing .map-marker { cursor: move; }
-        .map-marker.selected { border: 3px solid #f1c40f !important; z-index: 100 !important; box-shadow: 0 0 15px rgba(241, 196, 15, 0.8) !important; background-color: rgba(241, 196, 15, 0.2) !important; }
+        .map-marker.selected { border-color: #f1c40f !important; z-index: 100 !important; box-shadow: 0 0 1em rgba(241, 196, 15, 0.8) !important; background-color: rgba(241, 196, 15, 0.2) !important; }
         
         body.is-admin .sidebar { display: flex; }
     </style>
@@ -92,9 +103,9 @@
             
             <div style="display: flex; gap: 10px; margin-top: 10px;">
                 <div style="flex: 1;">
-                    <label style="margin-top: 0;">文字サイズ</label>
+                    <label style="margin-top: 0;">文字サイズ(基準)</label>
                     <input type="range" id="prop-size" min="10" max="80" value="16" oninput="document.getElementById('size-val').innerText=this.value;">
-                    <div style="font-size:0.75rem; text-align:center;"><span id="size-val">16</span>px</div>
+                    <div style="font-size:0.75rem; text-align:center;"><span id="size-val">16</span></div>
                 </div>
                 <div style="flex: 1;">
                     <label style="margin-top: 0;">文字色</label>
@@ -155,7 +166,7 @@
     let selectedMarkerIndex = null;
     let isDragging = false;
     let draggedElement = null; 
-    let tempTargetMapImage = null; // 【変更】移動先マップ用の一時画像
+    let tempTargetMapImage = null; 
 
     let mapData = {
         currentId: "national_01",
@@ -192,8 +203,6 @@
         const data = mapData.maps[mapId];
         document.getElementById('map-title').innerText = data.title;
         document.getElementById('map-image').src = data.image;
-        
-        // 現在のマップ名入力欄を更新
         document.getElementById('map-prop-title').value = data.title;
         
         const container = document.getElementById('marker-container');
@@ -209,7 +218,12 @@
             btn.innerText = m.label || "無名";
             btn.style.left = m.x + "%";
             btn.style.top = m.y + "%";
-            btn.style.fontSize = (m.fontSize || 16) + "px";
+            
+            // ★重要：フォントサイズを地図の幅に対する割合（cqw単位）に変換して適用
+            // 設定値「16」の場合、マップが最大(1000px)の時に16pxになるように計算（16 ÷ 10 = 1.6cqw）
+            const baseSize = m.fontSize || 16;
+            btn.style.fontSize = (baseSize / 10) + "cqw";
+            
             btn.style.color = m.color || "#ffffff";
 
             btn.onmousedown = (e) => {
@@ -227,7 +241,6 @@
         });
     }
 
-    // 現在のマップ名だけを変更する機能
     function applyCurrentMapTitle() {
         const titleInput = document.getElementById('map-prop-title').value;
         if(titleInput) {
@@ -241,9 +254,7 @@
         if(targetId) {
             applyMarkerEdits(); 
             renderMap(targetId);
-        } else {
-            alert("移動先IDが設定されていません。");
-        }
+        } else { alert("移動先IDが設定されていません。"); }
     }
 
     function toggleGridView() {
@@ -282,7 +293,6 @@
         const panel = document.getElementById('edit-panel');
         panel.style.opacity = 1; panel.style.pointerEvents = 'auto';
         
-        // ボタンの見た目設定
         document.getElementById('prop-label').value = m.label || "";
         document.getElementById('prop-size').value = m.fontSize || 16;
         document.getElementById('size-val').innerText = m.fontSize || 16;
@@ -290,13 +300,11 @@
         document.getElementById('prop-bg-toggle').checked = m.showBg !== false;
         document.getElementById('prop-border-toggle').checked = m.showBorder !== false;
         
-        // 移動先の設定
         const targetId = m.targetId || "";
         document.getElementById('prop-target').value = targetId;
         
-        // 【最重要】移動先のマップ画像を取得してプレビューに表示する
         const preview = document.getElementById('target-bg-preview');
-        document.getElementById('prop-target-bg').value = ""; // ファイル選択状態をリセット
+        document.getElementById('prop-target-bg').value = ""; 
         if (targetId && mapData.maps[targetId] && mapData.maps[targetId].image !== "kokka-map.png") {
             preview.style.backgroundImage = `url(${mapData.maps[targetId].image})`;
             preview.innerText = "";
@@ -319,7 +327,6 @@
         document.querySelectorAll('.map-marker').forEach(el => el.classList.remove('selected'));
     }
 
-    // 【変更】移動先のマップ画像を読み込む
     function handleTargetImageUpload(event) {
         if (selectedMarkerIndex === null || !event.target.files[0]) return;
         const reader = new FileReader();
@@ -336,27 +343,21 @@
         if (selectedMarkerIndex === null) return;
         const m = mapData.maps[mapData.currentId].markers[selectedMarkerIndex];
         
-        // 1. ボタンの見た目を更新
         m.label = document.getElementById('prop-label').value;
         m.fontSize = parseInt(document.getElementById('prop-size').value);
         m.color = document.getElementById('prop-color').value;
         m.showBg = document.getElementById('prop-bg-toggle').checked;
         m.showBorder = document.getElementById('prop-border-toggle').checked;
         
-        // 2. 移動先IDを更新
         const targetId = document.getElementById('prop-target').value;
         m.targetId = targetId;
 
-        // 3. 【最重要】移動先IDのマップが存在しなければ自動生成し、画像があればそれを適用する
         if (!mapData.maps[targetId]) {
-            // 新しく作られた部屋なら、とりあえずボタンと同じ名前をタイトルにしておく
             mapData.maps[targetId] = { title: m.label, image: "kokka-map.png", markers: [] };
         }
-        
-        // アップロードされた画像があれば、それを「移動先のマップの背景」として保存！
         if (tempTargetMapImage !== null) {
             mapData.maps[targetId].image = tempTargetMapImage;
-            tempTargetMapImage = null; // リセット
+            tempTargetMapImage = null; 
         }
         
         renderMap(mapData.currentId, true);
@@ -435,9 +436,7 @@
                 const errorData = await putRes.json();
                 alert(`保存失敗:\n${errorData.message}`);
             }
-        } catch (e) { 
-            alert(`通信エラー:\n${e.message}`); 
-        }
+        } catch (e) { alert(`通信エラー:\n${e.message}`); }
         btn.innerText = "変更をGitHubに保存";
     }
 
