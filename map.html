@@ -19,20 +19,14 @@
         /* サイドバー（PC版） */
         .sidebar { width: 320px; background: white; border-right: 2px solid #ddd; padding: 20px; box-sizing: border-box; display: none; flex-direction: column; overflow-y: auto; flex-shrink: 0; }
         
-        /* ★【スマホ対応】メディアクエリ：幅が800px以下の場合 */
+        /* ★スマホ対応レイアウト */
         @media (max-width: 800px) {
-            .app-container { flex-direction: column-reverse; } /* 並びを縦にして、順番を逆（マップ上、パネル下）にする */
+            .app-container { flex-direction: column-reverse; }
             .sidebar { 
-                width: 100%; 
-                height: 45vh; /* パネルの高さを画面の約半分に制限 */
-                border-right: none; 
-                border-top: 2px solid #ddd; 
-                padding: 15px;
+                width: 100%; height: 45vh; border-right: none; 
+                border-top: 2px solid #ddd; padding: 15px;
             }
-            .main-content { 
-                height: 55vh; /* マップ側の高さを確保 */
-                padding: 10px; 
-            }
+            .main-content { height: 55vh; padding: 10px; }
         }
 
         .sidebar-section { border: 1px solid #ccc; padding: 15px; margin-bottom: 15px; border-radius: 5px; background: #fafafa; }
@@ -56,7 +50,7 @@
         }
         #map-image { width: 100%; display: block; user-select: none; -webkit-user-drag: none; }
 
-        /* マップ上のボタン（比率維持） */
+        /* マップ上のボタン・ラベル */
         .map-marker {
             position: absolute; transform: translate(-50%, -50%);
             background-color: rgba(39, 174, 96, 0.9);
@@ -70,9 +64,15 @@
             border: 0.15em solid transparent; z-index: 10;
         }
         
-        .map-marker.no-bg { background-color: transparent !important; box-shadow: none !important; text-shadow: 0.05em 0.05em 0.15em rgba(0,0,0,0.8) !important; }
+        .map-marker.no-bg { background-color: transparent !important; box-shadow: none !important; text-shadow: 0.05em 0.05em 0.15em rgba(0,0,0,0.8) !important; padding: 0.2em 0.5em; min-width: auto; min-height: auto; }
         .map-marker.has-border { border-color: white; }
         .map-marker:hover { transform: translate(-50%, -50%) scale(1.05); z-index: 20; }
+        
+        /* ★ラベルモード用の設定（一般ユーザー視点のみホバー効果・カーソルを無効化） */
+        body:not(.is-admin) .map-marker.is-label { cursor: default; }
+        body:not(.is-admin) .map-marker.is-label:hover { transform: translate(-50%, -50%); z-index: 10; }
+
+        .editing .map-marker { cursor: move; }
         .map-marker.selected { border-color: #f1c40f !important; z-index: 100 !important; box-shadow: 0 0 1em rgba(241, 196, 15, 0.8) !important; background-color: rgba(241, 196, 15, 0.2) !important; }
         
         body.is-admin .sidebar { display: flex; }
@@ -106,10 +106,11 @@
         </div>
 
         <button class="btn-full" style="border-color: #27ae60; color: #27ae60; font-weight: bold;" onclick="addNewMarker()">＋ 新しいボタンを配置</button>
+        <button class="btn-full" style="border-color: #8e44ad; color: #8e44ad; font-weight: bold; margin-top: 5px;" onclick="addNewLabel()">＋ ラベル（文字のみ）を追加</button>
         
         <div class="sidebar-section" id="edit-panel" style="opacity: 0.5; pointer-events: none; margin-top: 15px;">
-            <div class="sidebar-title">🔘 ボタンの見た目設定</div>
-            <label>ボタン名</label>
+            <div class="sidebar-title">🔘 選択中の要素の編集</div>
+            <label>表示名</label>
             <input type="text" id="prop-label">
             
             <div style="display: flex; gap: 10px; margin-top: 10px;">
@@ -131,9 +132,15 @@
                 <label for="prop-border-toggle" style="margin:0;">枠線</label>
             </div>
             
-            <hr style="border: 0; border-top: 1px solid #ccc; margin: 20px 0;">
+            <div class="checkbox-group" style="margin-top: 10px; border-top: 1px dashed #ccc; padding-top: 10px;">
+                <input type="checkbox" id="prop-is-label">
+                <label for="prop-is-label" style="margin:0; color: #d35400; font-weight: bold;">🔖 ラベル（リンクなし）にする</label>
+            </div>
+            
+            <hr style="border: 0; border-top: 1px solid #ccc; margin: 15px 0;">
 
             <div class="sidebar-title">🚪 移動先（次階層）の設定</div>
+            <p style="font-size: 0.7rem; color: #666; margin-top: 0;">※ラベル設定時は無効になります</p>
             <label>移動先ID</label>
             <div style="display: flex; gap: 5px; margin-bottom: 10px;">
                 <input type="text" id="prop-target" style="margin-bottom: 0;">
@@ -225,6 +232,7 @@
             
             if (m.showBorder) btn.classList.add('has-border');
             if (m.showBg === false) btn.classList.add('no-bg');
+            if (m.isLabelOnly) btn.classList.add('is-label'); // ★ラベルクラスの付与
             
             btn.innerText = m.label || "無名";
             btn.style.left = m.x + "%";
@@ -232,7 +240,6 @@
             
             const baseSize = m.fontSize || 16;
             btn.style.fontSize = (baseSize / 10) + "cqw";
-            
             btn.style.color = m.color || "#ffffff";
 
             btn.onmousedown = (e) => {
@@ -242,7 +249,6 @@
                 isDragging = true; draggedElement = btn; 
             };
             
-            // タッチ対応
             btn.ontouchstart = (e) => {
                 if(!isAdmin) return;
                 e.stopPropagation();
@@ -252,7 +258,10 @@
 
             btn.onclick = (e) => {
                 e.stopPropagation();
-                if(!isAdmin) renderMap(m.targetId);
+                // ★一般ユーザー、かつ「ラベルのみ」ではない場合のみ移動する
+                if(!isAdmin && !m.isLabelOnly) {
+                    renderMap(m.targetId);
+                }
             };
             container.appendChild(btn);
         });
@@ -268,6 +277,10 @@
 
     function jumpToTarget() {
         const targetId = document.getElementById('prop-target').value;
+        if(document.getElementById('prop-is-label').checked) {
+            alert("ラベル設定中はジャンプできません。");
+            return;
+        }
         if(targetId) {
             applyMarkerEdits(); 
             renderMap(targetId);
@@ -284,6 +297,9 @@
             grid.innerHTML = '';
             const markers = mapData.maps[mapData.currentId].markers;
             markers.forEach(m => {
+                // ラベルはグリッドビュー（移動先一覧）から除外する
+                if(m.isLabelOnly) return; 
+                
                 const targetId = m.targetId;
                 if(!mapData.maps[targetId]) mapData.maps[targetId] = { title: m.label, image: "kokka-map.png", markers: [] };
                 const tMap = mapData.maps[targetId];
@@ -297,8 +313,17 @@
 
     function addNewMarker() {
         mapData.maps[mapData.currentId].markers.push({
-            x: 50, y: 50, fontSize: 16, color: "#ffffff", showBorder: true, showBg: true,
+            x: 50, y: 50, fontSize: 16, color: "#ffffff", showBorder: true, showBg: true, isLabelOnly: false,
             label: "新規ボタン", targetId: "map_" + Date.now().toString().slice(-4)
+        });
+        renderMap(mapData.currentId, true);
+    }
+
+    // ★ラベル用の新規追加関数
+    function addNewLabel() {
+        mapData.maps[mapData.currentId].markers.push({
+            x: 50, y: 50, fontSize: 20, color: "#ffffff", showBorder: false, showBg: false, isLabelOnly: true,
+            label: "新規ラベル", targetId: ""
         });
         renderMap(mapData.currentId, true);
     }
@@ -316,6 +341,9 @@
         document.getElementById('prop-color').value = m.color || "#ffffff";
         document.getElementById('prop-bg-toggle').checked = m.showBg !== false;
         document.getElementById('prop-border-toggle').checked = m.showBorder !== false;
+        
+        // ★ラベル化チェックボックスの反映
+        document.getElementById('prop-is-label').checked = m.isLabelOnly === true;
         
         const targetId = m.targetId || "";
         document.getElementById('prop-target').value = targetId;
@@ -366,99 +394,22 @@
         m.showBg = document.getElementById('prop-bg-toggle').checked;
         m.showBorder = document.getElementById('prop-border-toggle').checked;
         
-        const targetId = document.getElementById('prop-target').value;
-        m.targetId = targetId;
+        // ★ラベルかどうかのフラグを保存
+        m.isLabelOnly = document.getElementById('prop-is-label').checked;
+        
+        // ラベルでない場合のみ、移動先の設定を処理
+        if (!m.isLabelOnly) {
+            const targetId = document.getElementById('prop-target').value;
+            m.targetId = targetId;
 
-        if (!mapData.maps[targetId]) {
-            mapData.maps[targetId] = { title: m.label, image: "kokka-map.png", markers: [] };
-        }
-        if (tempTargetMapImage !== null) {
-            mapData.maps[targetId].image = tempTargetMapImage;
-            tempTargetMapImage = null; 
+            if (!mapData.maps[targetId]) {
+                mapData.maps[targetId] = { title: m.label, image: "kokka-map.png", markers: [] };
+            }
+            if (tempTargetMapImage !== null) {
+                mapData.maps[targetId].image = tempTargetMapImage;
+                tempTargetMapImage = null; 
+            }
         }
         
         renderMap(mapData.currentId, true);
-        setTimeout(() => selectMarker(selectedMarkerIndex), 50); 
-    }
-
-    function deleteSelectedMarker() {
-        if (selectedMarkerIndex === null) return;
-        if (confirm("削除しますか？")) {
-            mapData.maps[mapData.currentId].markers.splice(selectedMarkerIndex, 1);
-            deselectMarker(); renderMap(mapData.currentId, true);
-        }
-    }
-
-    const handleMove = (clientX, clientY) => {
-        if(!isDragging || selectedMarkerIndex === null || !draggedElement) return;
-        const viewport = document.getElementById('map-viewport');
-        const rect = viewport.getBoundingClientRect();
-        let x = Math.max(0, Math.min(100, ((clientX - rect.left) / rect.width) * 100));
-        let y = Math.max(0, Math.min(100, ((clientY - rect.top) / rect.height) * 100));
-        draggedElement.style.left = x.toFixed(2) + "%";
-        draggedElement.style.top = y.toFixed(2) + "%";
-        mapData.maps[mapData.currentId].markers[selectedMarkerIndex].x = x.toFixed(2);
-        mapData.maps[mapData.currentId].markers[selectedMarkerIndex].y = y.toFixed(2);
-    };
-
-    window.onmousemove = (e) => handleMove(e.clientX, e.clientY);
-    window.ontouchmove = (e) => handleMove(e.touches[0].clientX, e.touches[0].clientY);
-    
-    window.onmouseup = window.ontouchend = () => { isDragging = false; draggedElement = null; };
-
-    function goBack() { if (historyStack.length > 0) renderMap(historyStack.pop(), true); }
-
-    function toggleAdmin() {
-        if(!isAdmin) {
-            if(prompt("PASS:") === "426463") {
-                githubToken = prompt("GitHub Token:");
-                if(githubToken) {
-                    isAdmin = true;
-                    document.body.classList.add('is-admin');
-                    document.getElementById('auth-btn').innerText = "ログアウト";
-                    renderMap(mapData.currentId, true);
-                }
-            }
-        } else { location.reload(); }
-    }
-
-    async function saveToGitHub() {
-        if(!githubToken) return;
-        const cleanToken = githubToken.trim(); 
-        const btn = document.querySelector('.btn-save');
-        btn.innerText = "通信中...";
-        const url = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${FILE_PATH}`;
-        
-        const headers = { 
-            'Authorization': `Bearer ${cleanToken}`,
-            'Accept': 'application/vnd.github+json',
-            'X-GitHub-Api-Version': '2022-11-28'
-        };
-
-        try {
-            const getRes = await fetch(url, { headers: headers, cache: 'no-store' });
-            let fileSha = undefined;
-            if (getRes.ok) {
-                const data = await getRes.json();
-                fileSha = data.sha;
-            }
-
-            const jsonString = JSON.stringify({ maps: mapData.maps }, null, 2);
-            const encodedContent = btoa(unescape(encodeURIComponent(jsonString)));
-            
-            const putRes = await fetch(url, {
-                method: 'PUT',
-                headers: { ...headers, 'Content-Type': 'application/json' },
-                body: JSON.stringify({ message: "Update map data", content: encodedContent, sha: fileSha })
-            });
-
-            if (putRes.ok) alert("GitHubへの保存完了！");
-            else alert("保存失敗。");
-        } catch (e) { alert(`通信エラー:\n${e.message}`); }
-        btn.innerText = "変更をGitHubに保存";
-    }
-
-    initApp();
-</script>
-</body>
-</html>
+        setTimeout(() => selectMarker(selectedMa
