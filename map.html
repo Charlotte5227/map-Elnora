@@ -13,75 +13,61 @@
         button { cursor: pointer; border: none; border-radius: 4px; font-weight: bold; padding: 8px 15px; transition: 0.2s; }
         #auth-btn { background: white; color: var(--primary); }
         #back-btn { background: #34495e; color: white; margin-right: 15px; display: none; }
+        
+        #sound-toggle-btn { background: transparent; color: white; font-size: 1.5rem; padding: 0 10px; margin-right: 15px; display: flex; align-items: center; justify-content: center; }
 
         .app-container { display: flex; flex-grow: 1; overflow: hidden; }
         
-        /* サイドバー */
         .sidebar { width: 320px; background: white; border-right: 2px solid #ddd; padding: 20px; box-sizing: border-box; display: none; flex-direction: column; overflow-y: auto; flex-shrink: 0; }
         
         @media (max-width: 800px) {
             .app-container { flex-direction: column-reverse; }
-            .sidebar { 
-                width: 100%; height: 45vh; border-right: none; 
-                border-top: 2px solid #ddd; padding: 15px;
-            }
+            .sidebar { width: 100%; height: 45vh; border-right: none; border-top: 2px solid #ddd; padding: 15px; }
             .main-content { height: 55vh; padding: 10px; }
         }
 
         .sidebar-section { border: 1px solid #ccc; padding: 15px; margin-bottom: 15px; border-radius: 5px; background: #fafafa; }
         .sidebar-title { font-size: 1rem; margin: 0 0 10px 0; border-bottom: 2px solid #333; padding-bottom: 5px; color: #2c3e50; font-weight: bold; }
         .sidebar label { display: block; font-size: 0.8rem; font-weight: bold; margin-top: 10px; margin-bottom: 5px; }
-        .sidebar input[type="text"], .sidebar input[type="range"], .sidebar input[type="color"] { width: 100%; box-sizing: border-box; margin-bottom: 5px; padding: 5px; }
+        .sidebar input[type="text"], .sidebar input[type="range"], .sidebar input[type="color"] { width: 100%; box-sizing: border-box; margin-bottom: 5px; padding: 5px; border: 1px solid #ccc; border-radius: 3px; }
+        .sidebar input[type="file"] { width: 100%; box-sizing: border-box; margin-bottom: 5px; font-size: 0.8rem; }
         .sidebar .checkbox-group { display: flex; align-items: center; gap: 10px; margin: 5px 0; }
         .sidebar input[type="checkbox"] { width: auto; }
         
-        #target-bg-preview { width: 100%; height: 80px; border: 1px dashed #aaa; margin-top: 5px; background-size: cover; background-position: center; display: flex; align-items: center; justify-content: center; color: #aaa; font-size: 0.8rem; background-color: #eee; }
+        .preview-box { width: 100%; height: 80px; border: 1px dashed #aaa; margin-top: 5px; background-size: cover; background-position: center; display: flex; align-items: center; justify-content: center; color: #aaa; font-size: 0.8rem; background-color: #eee; }
+        
         .btn-full { width: 100%; padding: 10px; margin-top: 10px; border: 1px solid #333; background: white; }
         .btn-full:hover { background: #eee; }
         .btn-apply { background: #3498db; color: white; border: none; }
         .btn-save { background: #e74c3c; color: white; border: none; font-size: 1.1rem; }
 
         .main-content { flex-grow: 1; padding: 20px; overflow: auto; display: flex; justify-content: center; align-items: flex-start; position: relative; }
-        #map-viewport { 
-            position: relative; width: 100%; max-width: 1000px; background: white; 
-            box-shadow: 0 5px 20px rgba(0,0,0,0.1); touch-action: none; display: block;
-            container-type: inline-size; 
-        }
+        #map-viewport { position: relative; width: 100%; max-width: 1000px; background: white; box-shadow: 0 5px 20px rgba(0,0,0,0.1); touch-action: none; display: block; container-type: inline-size; }
         #map-image { width: 100%; display: block; user-select: none; -webkit-user-drag: none; }
 
-        /* マップ上のボタン・ラベル */
         .map-marker {
             position: absolute; transform: translate(-50%, -50%);
             background-color: rgba(39, 174, 96, 0.9);
-            color: white; font-weight: bold; 
-            display: flex; align-items: center; justify-content: center; 
+            color: white; font-weight: bold; display: flex; align-items: center; justify-content: center; 
             transition: transform 0.1s; user-select: none; overflow: hidden; box-sizing: border-box;
-            border-radius: 0.5em; 
-            box-shadow: 0 0.25em 0.6em rgba(0,0,0,0.3);
-            text-shadow: 0.05em 0.05em 0.15em rgba(0,0,0,0.8);
-            padding: 0.5em 1em; white-space: nowrap; min-width: 3em; min-height: 2em;
-            border: 0.15em solid transparent; z-index: 10;
+            border-radius: 0.5em; box-shadow: 0 0.25em 0.6em rgba(0,0,0,0.3); text-shadow: 0.05em 0.05em 0.15em rgba(0,0,0,0.8);
+            padding: 0.5em 1em; white-space: nowrap; min-width: 3em; min-height: 2em; border: 0.15em solid transparent; z-index: 10;
         }
         
         .map-marker.no-bg { background-color: transparent !important; box-shadow: none !important; text-shadow: 0.05em 0.05em 0.15em rgba(0,0,0,0.8) !important; padding: 0.2em 0.5em; min-width: auto; min-height: auto; }
         .map-marker.has-border { border-color: white; }
         .map-marker:hover { transform: translate(-50%, -50%) scale(1.05); z-index: 20; }
-        
         body:not(.is-admin) .map-marker.is-label { cursor: default; }
         body:not(.is-admin) .map-marker.is-label:hover { transform: translate(-50%, -50%); z-index: 10; }
-
         .editing .map-marker { cursor: move; }
         .map-marker.selected { border-color: #f1c40f !important; z-index: 100 !important; box-shadow: 0 0 1em rgba(241, 196, 15, 0.8) !important; background-color: rgba(241, 196, 15, 0.2) !important; }
-        
         body.is-admin .sidebar { display: flex; }
 
-        /* グリッドビュー（都市一覧） */
         #grid-view { display: none; width: 100%; max-width: 1200px; padding: 20px; box-sizing: border-box; }
         .grid-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px; }
         .grid-card { background: white; border: 1px solid #ccc; border-radius: 8px; padding: 15px; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
         .grid-card img { width: 100%; height: 150px; object-fit: cover; background: #eee; border-radius: 4px; margin-bottom: 10px; }
 
-        /* ★専用ログインモーダル */
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; justify-content: center; align-items: center; z-index: 2000; }
         .modal-content { background: white; padding: 25px; border-radius: 8px; width: 90%; max-width: 350px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
         .modal-content input { width: 100%; padding: 10px; margin-bottom: 15px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; font-size: 1rem; }
@@ -92,16 +78,18 @@
 <div class="header">
     <div style="display: flex; align-items: center;">
         <button id="back-btn" onclick="goBack()">◀ 戻る</button>
+        <button id="sound-toggle-btn" onclick="toggleMute()" title="BGMのオン/オフ">🔊</button>
         <h1 id="map-title">国家全図</h1>
     </div>
     <button id="auth-btn" onclick="toggleAdmin()">管理者ログイン</button>
 </div>
 
+<audio id="bgm-player" loop></audio>
+
 <div id="login-modal" class="modal-overlay" style="display:none;">
     <div class="modal-content">
         <h3 style="margin-top:0; color:#2c3e50;">管理者ログイン</h3>
-        <p style="font-size: 0.8rem; color:#666; margin-bottom:15px;">パスワードとGitHubトークンを入力してください。</p>
-        <input type="password" id="login-pass" placeholder="パスワード">
+        <input type="password" id="login-pass" placeholder="パスワード (426463)">
         <input type="password" id="login-token" placeholder="GitHub Personal Access Token">
         <div style="display: flex; gap: 10px;">
             <button class="btn-full" style="background:#3498db; color:white; margin:0;" onclick="executeLogin()">ログイン</button>
@@ -114,11 +102,23 @@
     <div class="sidebar" id="sidebar">
         
         <div class="sidebar-section" style="background: #e8f4f8; border-color: #3498db; padding: 10px 15px;">
-            <label style="margin-top: 0;">現在のマップ名</label>
-            <div style="display: flex; gap: 5px;">
-                <input type="text" id="map-prop-title" style="margin-bottom: 0;">
-                <button onclick="applyCurrentMapTitle()" style="background: #3498db; color: white;">更新</button>
-            </div>
+            <div class="sidebar-title" style="margin-bottom: 5px;">🗺️ 現在のマップ設定</div>
+            
+            <label style="margin-top: 5px;">マップ名</label>
+            <input type="text" id="map-prop-title">
+            
+            <label style="margin-top: 10px;">背景画像 (自動アップロード)</label>
+            <input type="text" id="map-prop-bg" placeholder="ファイル名が自動で入ります" oninput="updatePreview('map-bg-preview', this.value)">
+            <input type="file" accept="image/png, image/jpeg" onchange="uploadImageToGitHub(this.files[0], 'map-prop-bg', 'map-bg-preview')">
+            <div id="map-bg-preview" class="preview-box"></div>
+            
+            <label style="margin-top: 10px;">BGM (ファイル名 例: bgm.mp3)</label>
+            <input type="text" id="map-prop-bgm" placeholder="mp3ファイル名を入力">
+            
+            <label style="margin-top: 10px;">BGM 音量 (<span id="map-bgm-vol-val">50</span>%)</label>
+            <input type="range" id="map-prop-bgm-vol" min="0" max="100" value="50" oninput="updateLiveVolume(this.value)">
+            
+            <button onclick="applyMapSettings()" class="btn-full" style="background: #3498db; color: white; margin-top: 15px;">マップ設定を更新</button>
         </div>
 
         <button class="btn-full" style="border-color: #27ae60; color: #27ae60; font-weight: bold;" onclick="addNewMarker()">＋ 新しいボタンを配置</button>
@@ -163,9 +163,10 @@
                 <button onclick="jumpToTarget()" style="background: #34495e; color: white; padding: 5px 10px;">🚀</button>
             </div>
 
-            <label>次階層のマップ画像</label>
-            <input type="file" id="prop-target-bg" accept="image/png, image/jpeg" onchange="handleTargetImageUpload(event)">
-            <div id="target-bg-preview">デフォルト</div>
+            <label>次階層のマップ画像 (自動アップロード)</label>
+            <input type="text" id="prop-target-bg" placeholder="ファイル名が自動で入ります" oninput="updatePreview('target-bg-preview', this.value)">
+            <input type="file" accept="image/png, image/jpeg" onchange="uploadImageToGitHub(this.files[0], 'prop-target-bg', 'target-bg-preview')">
+            <div id="target-bg-preview" class="preview-box"></div>
             
             <button class="btn-full btn-apply" onclick="applyMarkerEdits()" style="margin-top: 15px;">設定を反映</button>
             <button class="btn-full" style="color: #e74c3c; border-color: #e74c3c; margin-top: 10px;" onclick="deleteSelectedMarker()">削除</button>
@@ -200,43 +201,121 @@
     let selectedMarkerIndex = null;
     let isDragging = false;
     let draggedElement = null; 
-    let tempTargetMapImage = null; 
+    let isMuted = false;
 
     let mapData = {
         currentId: "national_01",
         maps: {
-            "national_01": { title: "国家全図", image: "kokka-map.png", markers: [] }
+            "national_01": { title: "国家全図", image: "kokka-map.png", bgm: "", bgmVolume: 0.5, markers: [] }
         }
     };
 
-    // ★ 改善：ローカルファイルでのエラー回避と、データ破損時の警告追加
     async function initApp() {
         try {
             const isLocal = window.location.protocol === 'file:';
-            // ローカルで開いている場合はエラーを防ぐため ?v= を付けない
             const fetchUrl = isLocal ? 'data.json' : `data.json?v=${new Date().getTime()}`;
-            
             const response = await fetch(fetchUrl);
             if (response.ok) {
                 const textData = await response.text();
                 try {
                     const loadedData = JSON.parse(textData);
-                    if (loadedData && loadedData.maps) {
-                        mapData.maps = loadedData.maps;
-                    }
-                } catch (parseError) {
-                    alert("⚠️ データ読み込みエラー: data.json が壊れています。\n\n詳細: " + parseError.message);
-                }
+                    if (loadedData && loadedData.maps) mapData.maps = loadedData.maps;
+                } catch (parseError) { console.error("データ読み込みエラー", parseError); }
             }
-        } catch (error) { 
-            console.warn("初期データの読み込みをスキップしました (初回起動またはローカル実行)。"); 
-        }
+        } catch (error) { console.warn("初期データの読み込みをスキップしました"); }
         renderMap("national_01");
+    }
+
+    function updatePreview(elementId, url) {
+        const preview = document.getElementById(elementId);
+        if (url && url.trim() !== "") {
+            preview.style.backgroundImage = `url(${url})`;
+            preview.innerText = "";
+        } else {
+            preview.style.backgroundImage = "none";
+            preview.innerText = "画像なし/未設定";
+        }
+    }
+
+    function toggleMute() {
+        isMuted = !isMuted;
+        const audio = document.getElementById('bgm-player');
+        const btn = document.getElementById('sound-toggle-btn');
+        if (isMuted) {
+            audio.pause(); btn.innerText = "🔇";
+        } else {
+            btn.innerText = "🔊";
+            if (audio.src) audio.play().catch(e => console.log("再生ブロック"));
+        }
+    }
+
+    function updateLiveVolume(val) {
+        document.getElementById('map-bgm-vol-val').innerText = val;
+        document.getElementById('bgm-player').volume = parseInt(val) / 100;
+    }
+
+    // ★ 選択した画像を「画像ファイルとして単体で」GitHubへアップロードする関数
+    async function uploadImageToGitHub(file, inputId, previewId) {
+        if(!githubToken) {
+            alert("画像をアップロードするには、先に「管理者ログイン」を行ってください。");
+            document.getElementById(inputId).nextElementSibling.value = ""; // ファイル選択をクリア
+            return;
+        }
+        if(!file) return;
+
+        const btn = document.querySelector('.btn-save');
+        btn.innerText = "画像アップロード中...";
+        btn.disabled = true;
+
+        const ext = file.name.split('.').pop() || "png";
+        const fileName = `img_${Date.now()}.${ext}`; // 自動で一意な名前をつける
+        const url = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${fileName}`;
+
+        const reader = new FileReader();
+        reader.onload = async (e) => {
+            const dataUrl = e.target.result;
+            const base64Data = dataUrl.split(',')[1]; // Base64の実データ部分だけを抽出
+
+            try {
+                const putRes = await fetch(url, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `Bearer ${githubToken.trim()}`,
+                        'Accept': 'application/vnd.github+json',
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        message: `Upload image ${fileName}`,
+                        content: base64Data
+                    })
+                });
+
+                if(putRes.ok) {
+                    // アップロード成功時、入力欄に自動で名前をセット
+                    document.getElementById(inputId).value = fileName;
+                    // プレビューには通信待ち時間を省くため手元のDataURLを表示
+                    const preview = document.getElementById(previewId);
+                    preview.style.backgroundImage = `url(${dataUrl})`;
+                    preview.innerText = "";
+                    alert(`「${fileName}」としてGitHubに画像を保存しました！\n反映ボタンを押して適用してください。`);
+                } else {
+                    const err = await putRes.json();
+                    alert("アップロード失敗:\n" + err.message);
+                }
+            } catch(error) {
+                alert("通信エラー:\n" + error.message);
+            } finally {
+                btn.innerText = "変更をGitHubに保存";
+                btn.disabled = false;
+                document.getElementById(inputId).nextElementSibling.value = ""; // ファイル選択をリセット
+            }
+        };
+        reader.readAsDataURL(file);
     }
 
     function renderMap(mapId, isBackAction = false) {
         if(!mapData.maps[mapId]) {
-            mapData.maps[mapId] = { title: "新しい区画", image: "kokka-map.png", markers: [] };
+            mapData.maps[mapId] = { title: "新しい区画", image: "kokka-map.png", bgm: "", bgmVolume: 0.5, markers: [] };
         }
         if (!isBackAction && mapData.currentId !== mapId) historyStack.push(mapData.currentId);
         mapData.currentId = mapId;
@@ -249,8 +328,26 @@
 
         const data = mapData.maps[mapId];
         document.getElementById('map-title').innerText = data.title;
-        document.getElementById('map-image').src = data.image;
-        document.getElementById('map-prop-title').value = data.title;
+        document.getElementById('map-image').src = data.image || "kokka-map.png";
+        
+        document.getElementById('map-prop-title').value = data.title || "";
+        document.getElementById('map-prop-bg').value = data.image || "";
+        updatePreview('map-bg-preview', data.image);
+        
+        document.getElementById('map-prop-bgm').value = data.bgm || "";
+        const vol = data.bgmVolume !== undefined ? data.bgmVolume : 0.5;
+        document.getElementById('map-prop-bgm-vol').value = vol * 100;
+        document.getElementById('map-bgm-vol-val').innerText = Math.round(vol * 100);
+        
+        const audio = document.getElementById('bgm-player');
+        if (data.bgm && audio.dataset.currentBgm !== data.bgm) {
+            audio.src = data.bgm;
+            audio.dataset.currentBgm = data.bgm;
+            if (!isMuted) audio.play().catch(e => { isMuted = true; document.getElementById('sound-toggle-btn').innerText = "🔇"; });
+        } else if (!data.bgm && audio.dataset.currentBgm) {
+            audio.pause(); audio.src = ""; audio.dataset.currentBgm = "";
+        }
+        audio.volume = vol;
         
         const container = document.getElementById('marker-container');
         container.innerHTML = '';
@@ -293,24 +390,25 @@
         });
     }
 
-    function applyCurrentMapTitle() {
-        const titleInput = document.getElementById('map-prop-title').value;
-        if(titleInput) {
-            mapData.maps[mapData.currentId].title = titleInput;
-            document.getElementById('map-title').innerText = titleInput;
-        }
+    function applyMapSettings() {
+        mapData.maps[mapData.currentId].title = document.getElementById('map-prop-title').value;
+        mapData.maps[mapData.currentId].bgm = document.getElementById('map-prop-bgm').value;
+        mapData.maps[mapData.currentId].bgmVolume = parseInt(document.getElementById('map-prop-bgm-vol').value) / 100;
+        
+        const bgInput = document.getElementById('map-prop-bg').value;
+        if(bgInput) mapData.maps[mapData.currentId].image = bgInput;
+        
+        renderMap(mapData.currentId, true);
+        alert("マップ設定を反映しました！");
     }
 
     function jumpToTarget() {
         const targetId = document.getElementById('prop-target').value;
         if(document.getElementById('prop-is-label').checked) {
-            alert("ラベル設定中はジャンプできません。");
-            return;
+            alert("ラベル設定中はジャンプできません。"); return;
         }
-        if(targetId) {
-            applyMarkerEdits(); 
-            renderMap(targetId);
-        } else { alert("移動先IDが設定されていません。"); }
+        if(targetId) { applyMarkerEdits(); renderMap(targetId); } 
+        else { alert("移動先IDが設定されていません。"); }
     }
 
     function toggleGridView() {
@@ -321,8 +419,7 @@
             document.getElementById('view-toggle-btn').innerText = "マップに戻る";
             const grid = document.getElementById('grid-container');
             grid.innerHTML = '';
-            const markers = mapData.maps[mapData.currentId].markers;
-            markers.forEach(m => {
+            mapData.maps[mapData.currentId].markers.forEach(m => {
                 if(m.isLabelOnly) return; 
                 const targetId = m.targetId;
                 if(!mapData.maps[targetId]) mapData.maps[targetId] = { title: m.label, image: "kokka-map.png", markers: [] };
@@ -353,7 +450,6 @@
 
     function selectMarker(index) {
         selectedMarkerIndex = index;
-        tempTargetMapImage = null; 
         const m = mapData.maps[mapData.currentId].markers[index];
         const panel = document.getElementById('edit-panel');
         panel.style.opacity = 1; panel.style.pointerEvents = 'auto';
@@ -369,18 +465,11 @@
         const targetId = m.targetId || "";
         document.getElementById('prop-target').value = targetId;
         
-        const preview = document.getElementById('target-bg-preview');
-        document.getElementById('prop-target-bg').value = ""; 
-        if (targetId && mapData.maps[targetId] && mapData.maps[targetId].image !== "kokka-map.png") {
-            preview.style.backgroundImage = `url(${mapData.maps[targetId].image})`;
-            preview.innerText = "";
-        } else {
-            preview.style.backgroundImage = "none";
-            preview.innerText = "未設定";
-        }
+        const targetBgImg = (targetId && mapData.maps[targetId]) ? mapData.maps[targetId].image : "";
+        document.getElementById('prop-target-bg').value = targetBgImg;
+        updatePreview('target-bg-preview', targetBgImg);
 
-        const allMarkers = document.querySelectorAll('.map-marker');
-        allMarkers.forEach((el, i) => {
+        document.querySelectorAll('.map-marker').forEach((el, i) => {
             if (i === index) el.classList.add('selected');
             else el.classList.remove('selected');
         });
@@ -391,18 +480,6 @@
         const panel = document.getElementById('edit-panel');
         panel.style.opacity = 0.5; panel.style.pointerEvents = 'none';
         document.querySelectorAll('.map-marker').forEach(el => el.classList.remove('selected'));
-    }
-
-    function handleTargetImageUpload(event) {
-        if (selectedMarkerIndex === null || !event.target.files[0]) return;
-        const reader = new FileReader();
-        reader.onload = (e) => { 
-            tempTargetMapImage = e.target.result;
-            const preview = document.getElementById('target-bg-preview');
-            preview.style.backgroundImage = `url(${tempTargetMapImage})`; 
-            preview.innerText = "";
-        };
-        reader.readAsDataURL(event.target.files[0]);
     }
 
     function applyMarkerEdits() {
@@ -421,11 +498,12 @@
             m.targetId = targetId;
 
             if (!mapData.maps[targetId]) {
-                mapData.maps[targetId] = { title: m.label, image: "kokka-map.png", markers: [] };
+                mapData.maps[targetId] = { title: m.label, image: "kokka-map.png", bgm: "", bgmVolume: 0.5, markers: [] };
             }
-            if (tempTargetMapImage !== null) {
-                mapData.maps[targetId].image = tempTargetMapImage;
-                tempTargetMapImage = null; 
+            
+            const targetBgInput = document.getElementById('prop-target-bg').value;
+            if (targetBgInput) {
+                mapData.maps[targetId].image = targetBgInput;
             }
         }
         
@@ -455,11 +533,10 @@
 
     window.onmousemove = (e) => handleMove(e.clientX, e.clientY);
     window.ontouchmove = (e) => handleMove(e.touches[0].clientX, e.touches[0].clientY);
-    
     window.onmouseup = window.ontouchend = () => { isDragging = false; draggedElement = null; };
+
     function goBack() { if (historyStack.length > 0) renderMap(historyStack.pop(), true); }
 
-    // ★ モーダルを使った安全なログインシステム
     function toggleAdmin() {
         if(!isAdmin) {
             document.getElementById('login-modal').style.display = 'flex';
@@ -469,9 +546,7 @@
         }
     }
 
-    function closeLogin() {
-        document.getElementById('login-modal').style.display = 'none';
-    }
+    function closeLogin() { document.getElementById('login-modal').style.display = 'none'; }
 
     function executeLogin() {
         const pass = document.getElementById('login-pass').value;
@@ -484,13 +559,9 @@
                 document.body.classList.add('is-admin');
                 document.getElementById('auth-btn').innerText = "ログアウト";
                 closeLogin();
-                renderMap(mapData.currentId, true); // 編集枠を表示するため再描画
-            } else {
-                alert("GitHub Tokenを入力してください。");
-            }
-        } else {
-            alert("パスワードが違います。");
-        }
+                renderMap(mapData.currentId, true);
+            } else { alert("GitHub Tokenを入力してください。"); }
+        } else { alert("パスワードが違います。"); }
     }
 
     async function saveToGitHub() {
@@ -523,7 +594,7 @@
                 body: JSON.stringify({ message: "Update map data", content: encodedContent, sha: fileSha })
             });
 
-            if (putRes.ok) alert("GitHubへの保存完了！");
+            if (putRes.ok) alert("GitHubへの保存完了！\n変更は1〜3分後に反映されます。");
             else {
                 const errorData = await putRes.json();
                 alert(`保存失敗:\n${errorData.message}`);
